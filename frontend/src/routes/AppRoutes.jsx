@@ -1,0 +1,41 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useContext } from 'react'
+import { UserContext } from '../context/UserContext'
+import Layout from '../layout/Layout'
+import Feed from '../pages/Feed'
+import Jobs from '../pages/Jobs'
+import Login from '../pages/Login'
+import Register from '../pages/Register'
+import Network from '../pages/Network'
+import Messaging from '../pages/Messaging'
+import Notifications from '../pages/Notifications'
+import Profile from '../pages/Profile'
+import JobDetails from '../pages/JobDetails'
+import CompanyDashboard from '../pages/CompanyDashboard' // New
+
+function ProtectedRoute({ children }) {
+    const { user, loading } = useContext(UserContext)
+    if (loading) return <div>Loading...</div>
+    if (!user) return <Navigate to="/login" />
+    return <Layout>{children}</Layout>
+}
+
+export default function AppRoutes() {
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+
+                <Route path="/" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
+                <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
+                <Route path="/jobs/:id" element={<ProtectedRoute><JobDetails /></ProtectedRoute>} />
+                <Route path="/network" element={<ProtectedRoute><Network /></ProtectedRoute>} />
+                <Route path="/messaging" element={<ProtectedRoute><Messaging /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/company-dashboard" element={<ProtectedRoute><CompanyDashboard /></ProtectedRoute>} />
+            </Routes>
+        </BrowserRouter>
+    )
+}
