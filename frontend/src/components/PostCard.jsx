@@ -1,17 +1,21 @@
 import { useState, useContext } from 'react'
 import { UserContext } from '../context/UserContext'
-import { ThumbsUp, MessageCircle, Share2, Send } from 'lucide-react'
+import { ThumbsUp, MessageCircle, Share2, Send, MoreHorizontal, Trash2, Edit2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import axios from 'axios'
 
 export default function PostCard({ post }) {
     const { user } = useContext(UserContext)
+    const [showOptions, setShowOptions] = useState(false)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editContent, setEditContent] = useState(post.content)
     const [likes, setLikes] = useState(post.likes)
     const [comments, setComments] = useState(post.comments)
     const [showComments, setShowComments] = useState(false)
     const [commentText, setCommentText] = useState('')
 
     const isLiked = likes.includes(user?._id || user?.id)
+    const isAuthor = user && (user._id === post.author._id || user.id === post.author._id || user._id === post.author || user.id === post.author)
 
     const handleLike = async () => {
         try {
@@ -23,6 +27,28 @@ export default function PostCard({ post }) {
             }
         } catch (error) {
             console.error(error)
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!window.confirm('Are you sure you want to delete this post?')) return
+        try {
+            await axios.delete(`http://localhost:5000/api/posts/${post._id}`)
+            window.location.reload() // Simple refresh or parent callback would be better, but acceptable for now
+        } catch (error) {
+            console.error(error)
+            alert('Failed to delete post')
+        }
+    }
+
+    const handleUpdate = async () => {
+        try {
+            await axios.put(`http://localhost:5000/api/posts/${post._id}`, { content: editContent })
+            setIsEditing(false)
+            post.content = editContent // Optimistic update or refetch
+        } catch (error) {
+            console.error(error)
+            alert('Failed to update post')
         }
     }
 
@@ -43,26 +69,61 @@ export default function PostCard({ post }) {
     }
 
     return (
-        <div className="bg-white rounded-lg shadow mb-4">
+        <div className="bg-white rounded-lg shadow mb-4 relative group">
             {/* Header */}
-            <div className="p-4 flex gap-3">
-                {post.author.profilePic ? (
-                    <img src={`http://localhost:5000${post.author.profilePic}`} className="w-12 h-12 rounded-full object-cover" />
-                ) : (
-                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-500">
-                        {post.author.name[0]}
+            <div className="p-4 flex gap-3 justify-between items-start">
+                <div className="flex gap-3">
+                    {post.author.profilePic ? (
+                        <img src={`http://localhost:5000${post.author.profilePic}`} className="w-12 h-12 rounded-full object-cover" />
+                    ) : (
+                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-500">
+                            {post.author.name?.[0]}
+                        </div>
+                    )}
+                    <div>
+                        <h4 className="font-bold text-gray-900">{post.author.name}</h4>
+                        <p className="text-xs text-gray-500">{post.author.headline || 'Member'}</p>
+                        <p className="text-xs text-gray-400">{formatDistanceToNow(new Date(post.createdAt))} ago</p>
+                    </div>
+                </div>
+
+                {isAuthor && (
+                    <div className="relative">
+                        <button onClick={() => setShowOptions(!showOptions)} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100">
+                            <MoreHorizontal size={20} />
+                        </button>
+                        {showOptions && (
+                            <div className="absolute right-0 top-8 bg-white shadow-lg rounded-lg border py-2 w-32 z-10 animate-fade-in-up">
+                                <button onClick={() => { setIsEditing(true); setShowOptions(false) }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm flex items-center gap-2">
+                                    <Edit2 size={14} /> Edit
+                                </button>
+                                <button onClick={handleDelete} className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 text-sm flex items-center gap-2">
+                                    <Trash2 size={14} /> Delete
+                                </button>
+                            </div>
+                        )}
                     </div>
                 )}
-                <div>
-                    <h4 className="font-bold text-gray-900">{post.author.name}</h4>
-                    <p className="text-xs text-gray-500">{post.author.headline || 'Member'}</p>
-                    <p className="text-xs text-gray-400">{formatDistanceToNow(new Date(post.createdAt))} ago</p>
-                </div>
             </div>
 
             {/* Content */}
             <div className="px-4 pb-2">
-                <p className="text-gray-800 whitespace-pre-wrap">{post.content}</p>
+                {isEditing ? (
+                    <div className="mb-2">
+                        <textarea
+                            value={editContent}
+                            onChange={e => setEditContent(e.target.value)}
+                            className="w-full border rounded p-2 focus:ring-1 focus:ring-blue-500 outline-none"
+                            rows={3}
+                        />
+                        <div className="flex justify-end gap-2 mt-2">
+                            <button onClick={() => setIsEditing(false)} className="text-sm px-3 py-1 rounded hover:bg-gray-100">Cancel</button>
+                            <button onClick={handleUpdate} className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+                        </div>
+                    </div>
+                ) : (
+                    <p className="text-gray-800 whitespace-pre-wrap">{post.content}</p>
+                )}
             </div>
             {post.mediaUrl && post.mediaType === 'image' && (
                 <img src={`http://localhost:5000${post.mediaUrl}`} alt="Post media" className="w-full object-cover max-h-[500px]" />

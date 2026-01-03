@@ -104,3 +104,28 @@ export const commentOnPost = async (req, res) => {
         res.status(500).json({ message: error.message })
     }
 }
+
+export const deletePost = async (req, res) => {
+    try {
+        const { id } = req.params
+        // Ideally verify req.user.id matches post.author or is admin
+        const post = await Post.findByIdAndDelete(id)
+        if (!post) return res.status(404).json({ message: 'Post not found' })
+        res.json({ message: 'Post deleted successfully' })
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
+export const updatePost = async (req, res) => {
+    try {
+        const { id } = req.params
+        const { content } = req.body
+        const post = await Post.findByIdAndUpdate(id, { content }, { new: true })
+            .populate('author', 'name profilePic headline')
+        if (!post) return res.status(404).json({ message: 'Post not found' })
+        res.json(post)
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}

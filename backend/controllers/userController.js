@@ -14,9 +14,18 @@ export const getUserProfile = async (req, res) => {
 
 export const updateUserProfile = async (req, res) => {
     try {
-        // Validate logged in user matches param id or use req.user.id from middleware
-        // For simplicity using req.body data but ideally strict checking
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true })
+        const updateData = { ...req.body }
+
+        if (req.files) {
+            if (req.files.profilePic) {
+                updateData.profilePic = `/uploads/${req.files.profilePic[0].filename}`
+            }
+            if (req.files.coverImage) {
+                updateData.coverImage = `/uploads/${req.files.coverImage[0].filename}`
+            }
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(req.params.id, updateData, { new: true })
         res.json(updatedUser)
     } catch (error) {
         res.status(500).json({ message: error.message })

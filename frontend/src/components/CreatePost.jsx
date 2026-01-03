@@ -38,9 +38,7 @@ export default function CreatePost({ onPostCreated }) {
         }
 
         try {
-            const res = await axios.post('http://localhost:5000/api/posts', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            const res = await axios.post('http://localhost:5000/api/posts', formData)
             setContent('')
             setSelectedFile(null)
             setPreview(null)

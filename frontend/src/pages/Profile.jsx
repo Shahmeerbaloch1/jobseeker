@@ -37,18 +37,43 @@ export default function Profile() {
         }
     }
 
+    const [profilePicFile, setProfilePicFile] = useState(null)
+    const [coverImageFile, setCoverImageFile] = useState(null)
+
     const handleUpdate = async (e) => {
         e.preventDefault()
         try {
+            const formData = new FormData()
+            formData.append('name', editForm.name)
+            formData.append('headline', editForm.headline)
+            formData.append('bio', editForm.bio)
+            formData.append('skills', editForm.skills.split(',').map(s => s.trim()).filter(s => s)) // Still send array? backend expects body to be json if not simple. 
+            // Wait, multer fields handles files, body parser handles text. 
+            // arrays in formData are tricky. Let's send skills as comma separated string or let backend handle it?
+            // User controller typically uses req.body directly. 
+            // Let's check backend controller: `const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true })`
+            // If we send `skills` as string, mongoose might complain if schema is array? 
+            // No, mongoose casts if flexible. But schema defines `skills: [String]`.
+            // Safer to loop and append.
             const skillsArray = editForm.skills.split(',').map(s => s.trim()).filter(s => s)
-            const res = await axios.put(`http://localhost:5000/api/users/${user._id || user.id}`, {
-                ...editForm,
-                skills: skillsArray
-            })
+            skillsArray.forEach(skill => formData.append('skills[]', skill))
+            // Actually, express body parser with multer might just see 'skills' as array if multiple appended, or we can send as string and split in backend? 
+            // Backend Controller: `const updateData = { ...req.body }`. If req.body.skills is missing, it won't update.
+            // Simplest: Send as JSON string if complex, but let's try standard append. 
+            // Correction: `req.body` with multer will have text fields. 
+            // If I append multiple 'skills', req.body.skills will be array.
+
+            if (profilePicFile) formData.append('profilePic', profilePicFile)
+            if (coverImageFile) formData.append('coverImage', coverImageFile)
+
+            const res = await axios.put(`http://localhost:5000/api/users/${user._id || user.id}`, formData)
             setUser({ ...user, ...res.data }) // Update context
             setIsEditing(false)
+            setProfilePicFile(null)
+            setCoverImageFile(null)
         } catch (error) {
             console.error(error)
+            alert('Failed to update profile')
         }
     }
 
@@ -59,13 +84,16 @@ export default function Profile() {
             <div className="bg-white rounded-lg shadow overflow-hidden mb-4 relative">
 
                 {/* Cover Image */}
-                <div className="h-48 bg-gradient-to-r from-blue-700 to-blue-500 relative">
-                     {/* Profile Pic */}
-                    <div className="absolute top-6 left-8 border-4 border-white rounded-full shadow-lg bg-white">
+                <div className="h-48 bg-gradient-to-r from-blue-700 to-blue-500 relative group">
+                    {user.coverImage && (
+                        <img src={`http://localhost:5000${user.coverImage}`} className="w-full h-full object-cover absolute inset-0" />
+                    )}
+                    {/* Profile Pic */}
+                    <div className="absolute top-6 left-8 border-4 border-white rounded-full shadow-lg bg-white overflow-hidden">
                         {user.profilePic ? (
-                            <img src={`http://localhost:5000${user.profilePic}`} className="w-32 h-32 rounded-full object-cover" />
+                            <img src={`http://localhost:5000${user.profilePic}`} className="w-32 h-32 object-cover" />
                         ) : (
-                            <div className="w-32 h-32 bg-gray-200 rounded-full flex items-center justify-center font-bold text-4xl text-gray-500">
+                            <div className="w-32 h-32 bg-gray-200 flex items-center justify-center font-bold text-4xl text-gray-500">
                                 {user.name?.[0]}
                             </div>
                         )}
@@ -74,10 +102,13 @@ export default function Profile() {
                     <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 bg-white/20 backdrop-blur text-white rounded-full p-2 hover:bg-white/30 transition">
                         <Edit3 size={20} />
                     </button>
+                    <div className="absolute bottom-4 right-4 text-white/80 text-xs font-semibold drop-shadow-md">
+                        {user.coverImage ? 'Edit cover photo' : 'Add cover photo'}
+                    </div>
                 </div>
 
                 <div className="px-8 pb-8 relative">
-                   
+
                     <div className="mt-24 flex justify-between items-start">
                         <div>
                             <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
@@ -90,7 +121,7 @@ export default function Profile() {
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition">Open to</button>
+                            <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">Open to</button>
                             <button className="border border-blue-600 text-blue-600 px-6 py-2 rounded-full font-bold hover:bg-blue-50 transition">More</button>
                         </div>
                     </div>
@@ -127,13 +158,48 @@ export default function Profile() {
 
             {/* Edit Modal - Z-Index 60 to appear above Navbar (Z-50) */}
             {isEditing && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in">
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-up">
                         <div className="flex justify-between items-center p-6 border-b sticky top-0 bg-white z-10">
-                            <h2 className="text-xl font-bold">Edit Intro</h2>
+                            <h2 className="text-xl font-bold">Edit Profile</h2>
                             <button onClick={() => setIsEditing(false)} className="rounded-full p-2 hover:bg-gray-100"><X size={24} /></button>
                         </div>
                         <form onSubmit={handleUpdate} className="p-6 space-y-6">
+
+                            {/* Image Uploads */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Profile Picture</label>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-16 h-16 rounded-full bg-gray-100 border overflow-hidden">
+                                            {profilePicFile ? (
+                                                <img src={URL.createObjectURL(profilePicFile)} className="w-full h-full object-cover" />
+                                            ) : user.profilePic ? (
+                                                <img src={`http://localhost:5000${user.profilePic}`} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold">{user.name?.[0]}</div>
+                                            )}
+                                        </div>
+                                        <input type="file" accept="image/*" onChange={e => setProfilePicFile(e.target.files[0])} className="text-sm" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Cover Image</label>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-24 h-12 rounded bg-gray-100 border overflow-hidden">
+                                            {coverImageFile ? (
+                                                <img src={URL.createObjectURL(coverImageFile)} className="w-full h-full object-cover" />
+                                            ) : user.coverImage ? (
+                                                <img src={`http://localhost:5000${user.coverImage}`} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Cover</div>
+                                            )}
+                                        </div>
+                                        <input type="file" accept="image/*" onChange={e => setCoverImageFile(e.target.files[0])} className="text-sm" />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
                                 <input
@@ -172,7 +238,7 @@ export default function Profile() {
                                 />
                             </div>
                             <div className="flex justify-end pt-4 border-t">
-                                <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition">Save</button>
+                                <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition shadow-lg">Save Changes</button>
                             </div>
                         </form>
                     </div>

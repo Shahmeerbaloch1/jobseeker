@@ -14,10 +14,39 @@ export const sendMessage = async (req, res) => {
         // Real-time: Emit to recipient's room
         req.io.to(recipientId).emit('receive_message', message)
 
-        // Notification logic could be optional here since message itself is an alert
-        // But let's keep it consistent if needed, or rely on client-side msg event
+        // Also emit a notification event specifically for badge counts if clients listen to it
+        // Or client can just use 'receive_message' to increment count
 
         res.status(201).json(message)
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
+export const getUnreadCount = async (req, res) => {
+    try {
+        const { userId } = req.params
+        if (!userId) return res.status(400).json({ message: 'User ID required' })
+
+        const count = await Message.countDocuments({
+            recipient: userId,
+            read: false
+        })
+        res.json({ count: count || 0 })
+    } catch (error) {
+        console.error('Get Unread Count Error:', error)
+        res.status(500).json({ message: error.message })
+    }
+}
+
+export const markRead = async (req, res) => {
+    try {
+        const { senderId, recipientId } = req.body;
+        await Message.updateMany(
+            { sender: senderId, recipient: recipientId, read: false },
+            { $set: { read: true } }
+        )
+        res.json({ success: true })
     } catch (error) {
         res.status(500).json({ message: error.message })
     }

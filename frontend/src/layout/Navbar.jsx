@@ -4,7 +4,7 @@ import { UserContext } from '../context/UserContext'
 import { Bell, MessageSquare, LogOut, User as UserIcon, Briefcase, Home, Users } from 'lucide-react'
 
 export default function Navbar() {
-    const { user, logout } = useContext(UserContext)
+    const { user, logout, unreadCount } = useContext(UserContext)
     const navigate = useNavigate()
 
     const handleLogout = () => {
@@ -31,8 +31,13 @@ export default function Navbar() {
                             <Briefcase size={24} />
                             <span className="text-xs hidden md:block">Jobs</span>
                         </Link>
-                        <Link to="/messaging" className="flex flex-col items-center text-gray-500 hover:text-blue-600">
+                        <Link to="/messaging" className="flex flex-col items-center text-gray-500 hover:text-blue-600 relative">
                             <MessageSquare size={24} />
+                            {unreadCount > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                    {unreadCount}
+                                </span>
+                            )}
                             <span className="text-xs hidden md:block">Messaging</span>
                         </Link>
                         <Link to="/notifications" className="flex flex-col items-center text-gray-500 hover:text-blue-600">

@@ -52,6 +52,12 @@ export default function JobDetails() {
         formData.append('resume', resume)
         formData.append('coverLetter', coverLetter)
 
+        // Extract values from form elements by name
+        const form = e.target
+        formData.append('applicantName', form.applicantName.value)
+        formData.append('applicantEmail', form.applicantEmail.value)
+        formData.append('applicantPhone', form.applicantPhone.value)
+
         try {
             await axios.post(`http://localhost:5000/api/jobs/${id}/apply`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
@@ -121,6 +127,27 @@ export default function JobDetails() {
                         </div>
 
                         <form onSubmit={handleApply}>
+                            <div className="space-y-4 mb-4">
+                                <div>
+                                    <label className="block font-semibold mb-1">Full Name</label>
+                                    <input required className="w-full border p-2 rounded"
+                                        defaultValue={user.name}
+                                        name="applicantName" />
+                                </div>
+                                <div>
+                                    <label className="block font-semibold mb-1">Email</label>
+                                    <input required type="email" className="w-full border p-2 rounded"
+                                        defaultValue={user.email}
+                                        name="applicantEmail" />
+                                </div>
+                                <div>
+                                    <label className="block font-semibold mb-1">Phone Number</label>
+                                    <input required type="tel" className="w-full border p-2 rounded"
+                                        placeholder="+1 234 567 8900"
+                                        name="applicantPhone" />
+                                </div>
+                            </div>
+
                             <div className="mb-4">
                                 <label className="block font-semibold mb-2">Resume (PDF)</label>
                                 <div className="border border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 cursor-pointer relative">
@@ -129,6 +156,7 @@ export default function JobDetails() {
                                         accept=".pdf"
                                         onChange={(e) => setResume(e.target.files[0])}
                                         className="absolute inset-0 opacity-0 cursor-pointer"
+                                        required
                                     />
                                     <Upload className="mx-auto text-gray-400 mb-2" />
                                     <span className="text-blue-600 font-medium">Upload resume</span>
