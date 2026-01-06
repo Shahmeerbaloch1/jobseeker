@@ -8,5 +8,5 @@ export default mongoose.model('Application', new mongoose.Schema({
     applicantPhone: { type: String, required: true },
     resumeUrl: { type: String, required: true },
     coverLetter: { type: String },
-    status: { type: String, enum: ['pending', 'reviewed', 'rejected', 'hired'], default: 'pending' }
+    status: { type: String, enum: ['pending', 'reviewed', 'rejected', 'selected', 'stopped'], default: 'pending' }
 }, { timestamps: true }))

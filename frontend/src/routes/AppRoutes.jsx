@@ -12,6 +12,7 @@ import Notifications from '../pages/Notifications'
 import Profile from '../pages/Profile'
 import JobDetails from '../pages/JobDetails'
 import CompanyDashboard from '../pages/CompanyDashboard' // New
+import MyItems from '../pages/MyItems'
 
 function ProtectedRoute({ children }) {
     const { user, loading } = useContext(UserContext)
@@ -35,6 +36,7 @@ export default function AppRoutes() {
                 <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/company-dashboard" element={<ProtectedRoute><CompanyDashboard /></ProtectedRoute>} />
+                <Route path="/my-items" element={<ProtectedRoute><MyItems /></ProtectedRoute>} />
             </Routes>
         </BrowserRouter>
     )

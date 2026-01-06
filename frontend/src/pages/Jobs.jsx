@@ -2,7 +2,8 @@ import { useState, useEffect, useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { UserContext } from '../context/UserContext'
 import axios from 'axios'
-import { MapPin, Building, Search, Briefcase } from 'lucide-react'
+import { Search, MapPin, Briefcase, DollarSign, Clock, Plus, X } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export default function Jobs() {
     const { user } = useContext(UserContext)
@@ -46,86 +47,115 @@ export default function Jobs() {
     }
 
     return (
-        <div>
+        <div className="max-w-5xl mx-auto px-2">
             {user.role === 'company' ? (
-                <div className="bg-white rounded-lg shadow p-8">
-                    <h2 className="text-2xl font-bold mb-6 text-gray-800">Post a New Job</h2>
-                    <PostJobForm user={user} />
+                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 sm:p-12 mb-10 transition-all hover:shadow-md">
+                    <div className="max-w-3xl mx-auto">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="p-3 bg-blue-100 rounded-2xl text-blue-600">
+                                <Plus size={28} strokeWidth={2.5} />
+                            </div>
+                            <div>
+                                <h2 className="text-3xl font-black text-gray-900 tracking-tight">Hire Exceptional Talent</h2>
+                                <p className="text-gray-500 font-medium">Post your professional opportunity and reach thousands.</p>
+                            </div>
+                        </div>
+                        <PostJobForm user={user} />
+                    </div>
                 </div>
             ) : (
                 <>
-                    <div className="bg-white rounded-lg shadow p-6 mb-6">
-                        <h2 className="text-xl font-bold mb-4">Search for your next role</h2>
-                        <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
-                            <div className="flex-1 relative">
-                                <Search className="absolute left-3 top-3 text-gray-400" size={20} />
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-8 relative overflow-hidden group/search">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full -mr-20 -mt-20 blur-3xl group-hover/search:bg-blue-100/50 transition-colors"></div>
+                        <h2 className="text-2xl sm:text-3xl font-black mb-6 text-gray-900 tracking-tight leading-tight">Find Your Next <br className="sm:hidden" /><span className="text-blue-600 underline decoration-blue-200 decoration-4">Professional Leap</span></h2>
+                        <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4 relative z-10">
+                            <div className="flex-1 relative group">
+                                <Search className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
                                 <input
                                     type="text"
-                                    placeholder="Search by title, skill, or company"
+                                    placeholder="Keywords: React, Product Manager, Google..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="w-full pl-10 border p-2 rounded-lg focus:ring-1 focus:ring-blue-500 outline-none"
+                                    className="w-full pl-12 pr-4 bg-gray-50 border-none h-12 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-sm font-medium"
                                 />
                             </div>
-                            <div className="flex-1 relative">
-                                <MapPin className="absolute left-3 top-3 text-gray-400" size={20} />
+                            <div className="flex-1 relative group">
+                                <MapPin className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
                                 <input
                                     type="text"
-                                    placeholder="City, state, or zip code"
+                                    placeholder="Remote, London, New York..."
                                     value={location}
                                     onChange={(e) => setLocation(e.target.value)}
-                                    className="w-full pl-10 border p-2 rounded-lg focus:ring-1 focus:ring-blue-500 outline-none"
+                                    className="w-full pl-12 pr-4 bg-gray-50 border-none h-12 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-sm font-medium"
                                 />
                             </div>
-                            <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700">
+                            <button type="submit" className="bg-blue-600 text-white px-10 h-12 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95">
                                 Search
                             </button>
                         </form>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-4 mb-10">
                         {jobs.length === 0 ? (
-                            <div className="text-center py-10 bg-white rounded-lg shadow">No jobs found matching your criteria.</div>
+                            <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-100">
+                                <Briefcase size={48} className="mx-auto text-gray-200 mb-4" />
+                                <p className="text-gray-500 font-black text-lg">Opportunities are loading...</p>
+                                <p className="text-gray-400 text-sm mt-1">Try adjusting your filters for better results.</p>
+                            </div>
                         ) : (
                             jobs.map(job => (
-                                <div key={job._id} className="bg-white p-6 rounded-lg shadow hover:shadow-md transition cursor-pointer flex justify-between items-start">
-                                    <div className="flex gap-4">
-                                        <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center">
-                                            <Building size={24} className="text-gray-500" />
-                                        </div>
-                                        <div>
-                                            <Link to={`/jobs/${job._id}`} className="text-blue-600 font-bold text-lg hover:underline">{job.title}</Link>
-                                            <p className="text-gray-900">{job.company}</p>
-                                            <p className="text-gray-500 text-sm">{job.location}</p>
-                                            <div className="flex gap-2 mt-2">
-                                                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-semibold">{job.type || 'Full-time'}</span>
+                                <div key={job._id} className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl hover:border-blue-100 transition-all group/job">
+                                    <div className="flex flex-col sm:row gap-6 justify-between items-start">
+                                        <div className="flex flex-col sm:flex-row gap-6 flex-1 w-full">
+                                            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 group-hover/job:bg-blue-600 group-hover/job:text-white transition-all duration-300">
+                                                <Briefcase size={32} />
+                                            </div>
+                                            <div className="flex-1 space-y-1.5">
+                                                <Link to={`/jobs/${job._id}`} className="text-xl font-black text-gray-900 hover:text-blue-600 transition-colors leading-tight line-clamp-1">{job.title}</Link>
+                                                <p className="text-gray-600 font-bold flex items-center gap-2">
+                                                    <span className="text-gray-900">{job.company}</span>
+                                                    <span className="text-gray-300">•</span>
+                                                    <span className="text-gray-500 text-sm font-medium flex items-center gap-1"><MapPin size={14} /> {job.location}</span>
+                                                </p>
+                                                <div className="flex flex-wrap gap-2 mt-3 pt-1">
+                                                    <span className="bg-green-50 text-green-700 text-[10px] sm:text-xs px-3 py-1.5 rounded-xl font-black uppercase tracking-widest border border-green-100">{job.type || 'Full-time'}</span>
+                                                    <span className="bg-blue-50 text-blue-700 text-[10px] sm:text-xs px-3 py-1.5 rounded-xl font-black uppercase tracking-widest border border-blue-100">{job.salary || '$120k - $150k'}</span>
+                                                    <span className="bg-gray-50 text-gray-700 text-[10px] sm:text-xs px-3 py-1.5 rounded-xl font-black uppercase tracking-widest border border-gray-100">Actively Hiring</span>
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className="w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-50 flex items-center justify-between sm:justify-end gap-4">
+                                            <div className="hidden sm:block text-right">
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Posted</p>
+                                                <p className="text-xs font-black text-gray-800">2 days ago</p>
+                                            </div>
+                                            {(() => {
+                                                const application = myApplications.find(app => (app.job._id || app.job) === job._id)
+                                                if (application) {
+                                                    const statusColors = {
+                                                        pending: 'bg-yellow-50 text-yellow-700 border-yellow-100',
+                                                        selected: 'bg-green-50 text-green-700 border-green-100',
+                                                        rejected: 'bg-red-50 text-red-700 border-red-100',
+                                                        stopped: 'bg-gray-100 text-gray-700 border-gray-200'
+                                                    }
+                                                    return (
+                                                        <span className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest border ${statusColors[application.status] || statusColors.pending} flex items-center gap-2`}>
+                                                            <div className={`w-2 h-2 rounded-full animate-pulse ${application.status === 'selected' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                                                            {application.status === 'selected' ? 'Shortlisted' :
+                                                                application.status === 'rejected' ? 'Passed' :
+                                                                    application.status === 'stopped' ? 'Inactive' :
+                                                                        'Applied'}
+                                                        </span>
+                                                    )
+                                                }
+                                                return (
+                                                    <Link to={`/jobs/${job._id}`} className="bg-blue-600 text-white px-10 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95 text-center flex-1 sm:flex-none">
+                                                        Apply Now
+                                                    </Link>
+                                                )
+                                            })()}
+                                        </div>
                                     </div>
-                                    {(() => {
-                                        const application = myApplications.find(app => app.job._id === job._id)
-                                        if (application) {
-                                            const statusColors = {
-                                                pending: 'bg-yellow-100 text-yellow-800',
-                                                accepted: 'bg-green-100 text-green-800',
-                                                rejected: 'bg-red-100 text-red-800',
-                                                stopped: 'bg-gray-100 text-gray-800'
-                                            }
-                                            return (
-                                                <span className={`px-4 py-2 rounded-full font-semibold text-sm ${statusColors[application.status] || statusColors.pending}`}>
-                                                    {application.status === 'accepted' ? 'Accepted' :
-                                                        application.status === 'rejected' ? 'Rejected' :
-                                                            application.status === 'stopped' ? 'Hiring Stopped' :
-                                                                'Applied'}
-                                                </span>
-                                            )
-                                        }
-                                        return (
-                                            <Link to={`/jobs/${job._id}`} className="bg-blue-600 text-white px-4 py-1.5 rounded-full font-semibold hover:bg-blue-700">
-                                                Apply
-                                            </Link>
-                                        )
-                                    })()}
                                 </div>
                             ))
                         )}
@@ -145,39 +175,67 @@ function PostJobForm({ user }) {
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            // Convert skills string to array
             const payload = {
                 ...formData,
                 author: user._id || user.id,
                 skills: formData.skills.split(',').map(s => s.trim())
             }
             await axios.post('http://localhost:5000/api/jobs', payload)
-            alert('Job Posted Successfully!')
+            toast.success('Professional Opportunity Posted!')
             setFormData({ title: '', description: '', company: user.name, location: '', requirements: '', skills: '', website: '', salary: '', type: 'Full-time' })
         } catch (error) {
-            console.error(error)
-            alert('Failed to post job')
+            toast.error('Failed to post vacancy')
         }
     }
 
-    return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input required placeholder="Job Title" className="border p-2 rounded" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-                <input required placeholder="Company Name" className="border p-2 rounded" value={formData.company} onChange={e => setFormData({ ...formData, company: e.target.value })} />
-                <input required placeholder="Location" className="border p-2 rounded" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
-                <input placeholder="Salary Range (e.g. $80k - $100k)" className="border p-2 rounded" value={formData.salary} onChange={e => setFormData({ ...formData, salary: e.target.value })} />
-                <select className="border p-2 rounded" value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })}>
-                    <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option><option>Remote</option>
-                </select>
-                <input placeholder="Website Link" className="border p-2 rounded" value={formData.website} onChange={e => setFormData({ ...formData, website: e.target.value })} />
-            </div>
-            <textarea required placeholder="Job Description" rows={4} className="border p-2 rounded w-full" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-            <textarea required placeholder="Requirements (Bullet points recommended)" rows={4} className="border p-2 rounded w-full" value={formData.requirements} onChange={e => setFormData({ ...formData, requirements: e.target.value })} />
-            <input placeholder="Skills (comma separated, e.g. React, Node.js)" className="border p-2 rounded w-full" value={formData.skills} onChange={e => setFormData({ ...formData, skills: e.target.value })} />
+    const inputClasses = "w-full bg-gray-50 border-none px-5 h-12 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-sm font-black placeholder-gray-400"
+    const labelClasses = "block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1"
 
-            <div className="flex justify-end">
-                <button type="submit" className="bg-gray-900 text-white px-8 py-2 rounded-full font-bold hover:bg-gray-800">Post Job</button>
+    return (
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <label className={labelClasses}>Job Title</label>
+                    <input required placeholder="Lead Design Engineer" className={inputClasses} value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                    <label className={labelClasses}>Company Brand</label>
+                    <input required placeholder="Acne Studios" className={inputClasses} value={formData.company} onChange={e => setFormData({ ...formData, company: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                    <label className={labelClasses}>Location</label>
+                    <input required placeholder="Paris, France (On-site)" className={inputClasses} value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                    <label className={labelClasses}>Salary Package</label>
+                    <input placeholder="€90k - €120k" className={inputClasses} value={formData.salary} onChange={e => setFormData({ ...formData, salary: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                    <label className={labelClasses}>Employment Type</label>
+                    <select className={inputClasses + " cursor-pointer"} value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })}>
+                        <option>Full-time</option><option>Part-time</option><option>Contract</option><option>Internship</option><option>Remote</option>
+                    </select>
+                </div>
+                <div className="space-y-2">
+                    <label className={labelClasses}>Application Portal/Link</label>
+                    <input placeholder="https://careers.acne.com/..." className={inputClasses} value={formData.website} onChange={e => setFormData({ ...formData, website: e.target.value })} />
+                </div>
+            </div>
+            <div className="space-y-2">
+                <label className={labelClasses}>The Role Description</label>
+                <textarea required placeholder="Outline the vision and day-to-day impact..." rows={4} className={inputClasses.replace('h-12', 'h-auto py-4') + " resize-none"} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+                <label className={labelClasses}>Candidate Requirements</label>
+                <textarea required placeholder="Expertise in Figma, 5+ years experience..." rows={4} className={inputClasses.replace('h-12', 'h-auto py-4') + " resize-none"} value={formData.requirements} onChange={e => setFormData({ ...formData, requirements: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+                <label className={labelClasses}>Required Stack (Skills)</label>
+                <input placeholder="React, Tailwind, Node.js, GraphQL..." className={inputClasses} value={formData.skills} onChange={e => setFormData({ ...formData, skills: e.target.value })} />
+            </div>
+
+            <div className="flex justify-end pt-4">
+                <button type="submit" className="bg-gray-900 text-white px-12 py-4 rounded-3xl font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-gray-200 active:scale-95">Publish Opportunity</button>
             </div>
         </form>
     )

@@ -37,6 +37,9 @@ export default function Notifications() {
             case 'new_job': return <Briefcase className="text-green-600" />
             case 'like': return <Bell className="text-red-500" /> // Use Heart if available, else Bell
             case 'comment': return <MessageSquare className="text-orange-500" />
+            case 'job_application':
+            case 'job_apply':
+            case 'application_status': return <Briefcase className="text-blue-600" />
             default: return <Bell className="text-gray-500" />
         }
     }
@@ -47,6 +50,8 @@ export default function Notifications() {
             case 'new_job': return `posted a new job`
             case 'like': return `liked your post`
             case 'comment': return `commented on your post`
+            case 'job_application': return `applied for your job`
+            case 'application_status': return `updated your application status`
             default: return 'sent a notification'
         }
     }
@@ -61,9 +66,22 @@ export default function Notifications() {
                             <div className="mt-1">{getIcon(n.type)}</div>
                             <div className="flex-1">
                                 <p className="text-sm text-gray-800">
-                                    <span className="font-bold">{n.sender?.name || 'Someone'}</span> {getMessage(n)}
+                                    {n.message ? (
+                                        <span>{n.message}</span>
+                                    ) : (
+                                        <>
+                                            <span className="font-bold">{n.sender?.name || 'Someone'}</span> {getMessage(n)}
+                                        </>
+                                    )}
                                 </p>
-                                <p className="text-xs text-gray-500 mt-1">{formatDistanceToNow(new Date(n.createdAt))} ago</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {n.createdAt ? (
+                                        (() => {
+                                            const date = new Date(n.createdAt)
+                                            return isNaN(date.getTime()) ? 'Just now' : `${formatDistanceToNow(date)} ago`
+                                        })()
+                                    ) : 'Just now'}
+                                </p>
                             </div>
                             {!n.read && <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>}
                         </div>

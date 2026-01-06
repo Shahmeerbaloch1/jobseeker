@@ -72,7 +72,12 @@ export default function CompanyDashboard() {
                                 <h3 className="font-bold text-gray-900">{job.title}</h3>
                                 <p className="text-sm text-gray-600">{job.location}</p>
                                 <p className="text-xs text-gray-400 mt-1">
-                                    Posted {formatDistanceToNow(new Date(job.createdAt))} ago
+                                    Posted {job.createdAt ? (
+                                        (() => {
+                                            const date = new Date(job.createdAt)
+                                            return isNaN(date.getTime()) ? 'Just now' : `${formatDistanceToNow(date)} ago`
+                                        })()
+                                    ) : 'Just now'}
                                 </p>
                             </button>
                         ))
@@ -122,12 +127,12 @@ export default function CompanyDashboard() {
                                     </div>
                                     <span
                                         className={`px-3 py-1 rounded-full text-xs font-bold ${app.status === 'accepted'
-                                                ? 'bg-green-100 text-green-800'
-                                                : app.status === 'rejected'
-                                                    ? 'bg-red-100 text-red-800'
-                                                    : app.status === 'stopped'
-                                                        ? 'bg-gray-100 text-gray-800'
-                                                        : 'bg-yellow-100 text-yellow-800'
+                                            ? 'bg-green-100 text-green-800'
+                                            : app.status === 'rejected'
+                                                ? 'bg-red-100 text-red-800'
+                                                : app.status === 'stopped'
+                                                    ? 'bg-gray-100 text-gray-800'
+                                                    : 'bg-yellow-100 text-yellow-800'
                                             }`}
                                     >
                                         {app.status || 'pending'}

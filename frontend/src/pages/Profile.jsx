@@ -1,8 +1,10 @@
 import { useState, useEffect, useContext } from 'react'
 import { UserContext } from '../context/UserContext'
 import axios from 'axios'
+import toast from 'react-hot-toast'
 import PostCard from '../components/PostCard'
-import { MapPin, Edit3, X } from 'lucide-react'
+import { MapPin, Edit3, X, Camera } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 export default function Profile() {
     const { user, setUser } = useContext(UserContext)
@@ -33,12 +35,16 @@ export default function Profile() {
             const myPosts = res.data.filter(p => p.author._id === (user._id || user.id))
             setPosts(myPosts)
         } catch (error) {
-            console.error(error)
+            // Silently fail
         }
     }
 
+    const handleDeletePost = (postId) => {
+        setPosts(posts.filter(post => post._id !== postId))
+        toast.success('Post deleted successfully')
+    }
+
     const [profilePicFile, setProfilePicFile] = useState(null)
-    const [coverImageFile, setCoverImageFile] = useState(null)
 
     const handleUpdate = async (e) => {
         e.preventDefault()
@@ -47,113 +53,148 @@ export default function Profile() {
             formData.append('name', editForm.name)
             formData.append('headline', editForm.headline)
             formData.append('bio', editForm.bio)
-            formData.append('skills', editForm.skills.split(',').map(s => s.trim()).filter(s => s)) // Still send array? backend expects body to be json if not simple. 
-            // Wait, multer fields handles files, body parser handles text. 
-            // arrays in formData are tricky. Let's send skills as comma separated string or let backend handle it?
-            // User controller typically uses req.body directly. 
-            // Let's check backend controller: `const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true })`
-            // If we send `skills` as string, mongoose might complain if schema is array? 
-            // No, mongoose casts if flexible. But schema defines `skills: [String]`.
-            // Safer to loop and append.
+
             const skillsArray = editForm.skills.split(',').map(s => s.trim()).filter(s => s)
             skillsArray.forEach(skill => formData.append('skills[]', skill))
-            // Actually, express body parser with multer might just see 'skills' as array if multiple appended, or we can send as string and split in backend? 
-            // Backend Controller: `const updateData = { ...req.body }`. If req.body.skills is missing, it won't update.
-            // Simplest: Send as JSON string if complex, but let's try standard append. 
-            // Correction: `req.body` with multer will have text fields. 
-            // If I append multiple 'skills', req.body.skills will be array.
 
             if (profilePicFile) formData.append('profilePic', profilePicFile)
-            if (coverImageFile) formData.append('coverImage', coverImageFile)
 
             const res = await axios.put(`http://localhost:5000/api/users/${user._id || user.id}`, formData)
-            setUser({ ...user, ...res.data }) // Update context
+            setUser({ ...user, ...res.data })
             setIsEditing(false)
             setProfilePicFile(null)
-            setCoverImageFile(null)
+            toast.success('Profile updated!')
         } catch (error) {
-            console.error(error)
-            alert('Failed to update profile')
+            toast.error('Failed to update profile')
         }
     }
 
-    if (!user) return <div className="p-8 text-center text-gray-500">Loading profile...</div>
+    if (!user) return (
+        <div className="flex flex-col items-center justify-center p-20 text-gray-400">
+            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="font-bold uppercase tracking-widest text-xs">Loading Profile...</p>
+        </div>
+    )
 
     return (
-        <div>
-            <div className="bg-white rounded-lg shadow overflow-hidden mb-4 relative">
+        <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6 relative group/profile">
 
                 {/* Cover Image */}
-                <div className="h-48 bg-gradient-to-r from-blue-700 to-blue-500 relative group">
-                    {user.coverImage && (
-                        <img src={`http://localhost:5000${user.coverImage}`} className="w-full h-full object-cover absolute inset-0" />
-                    )}
-                    {/* Profile Pic */}
-                    <div className="absolute top-6 left-8 border-4 border-white rounded-full shadow-lg bg-white overflow-hidden">
-                        {user.profilePic ? (
-                            <img src={`http://localhost:5000${user.profilePic}`} className="w-32 h-32 object-cover" />
-                        ) : (
-                            <div className="w-32 h-32 bg-gray-200 flex items-center justify-center font-bold text-4xl text-gray-500">
-                                {user.name?.[0]}
-                            </div>
-                        )}
-                    </div>
-
-                    <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 bg-white/20 backdrop-blur text-white rounded-full p-2 hover:bg-white/30 transition">
+                <div className="h-32 sm:h-48 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
+                    <button
+                        onClick={() => setIsEditing(true)}
+                        className="absolute top-4 right-4 bg-white/20 backdrop-blur-md text-white rounded-xl p-2.5 hover:bg-white/40 transition-all shadow-lg active:scale-95 z-20"
+                    >
                         <Edit3 size={20} />
                     </button>
-                    <div className="absolute bottom-4 right-4 text-white/80 text-xs font-semibold drop-shadow-md">
-                        {user.coverImage ? 'Edit cover photo' : 'Add cover photo'}
-                    </div>
                 </div>
 
-                <div className="px-8 pb-8 relative">
-
-                    <div className="mt-24 flex justify-between items-start">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
-                            <p className="text-lg text-gray-600 mt-1">{user.headline || 'Add a headline...'}</p>
-                            <p className="text-sm text-gray-500 mt-2 flex items-center gap-1">
-                                <MapPin size={16} /> Los Angeles, CA <span className="mx-1 text-gray-300">|</span> <span className="text-blue-600 font-bold cursor-pointer hover:underline">Contact info</span>
-                            </p>
-                            <div className="mt-4 flex items-center gap-2 text-blue-600 font-bold text-sm">
-                                <span className="hover:underline cursor-pointer">{user.connections?.length || 0} connections</span>
+                <div className="px-6 sm:px-10 pb-10 relative">
+                    {/* Profile Pic - Positioned half-on/half-off the banner */}
+                    <div className="relative -mt-12 sm:-mt-16 inline-block">
+                        <div className="border-4 sm:border-[6px] border-white rounded-3xl shadow-2xl bg-white overflow-hidden w-28 h-28 sm:w-40 sm:h-40 group/pic">
+                            {user.profilePic ? (
+                                <img src={`http://localhost:5000${user.profilePic}`} className="w-full h-full object-cover transition-transform duration-500 group-hover/pic:scale-110" />
+                            ) : (
+                                <div className="w-full h-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-4xl sm:text-6xl text-white">
+                                    {user.name?.[0]}
+                                </div>
+                            )}
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/pic:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => setIsEditing(true)}>
+                                <Camera size={24} className="text-white" />
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">Open to</button>
-                            <button className="border border-blue-600 text-blue-600 px-6 py-2 rounded-full font-bold hover:bg-blue-50 transition">More</button>
+                    </div>
+
+                    <div className="mt-6 flex flex-col lg:flex-row justify-between items-start gap-6">
+                        <div className="flex-1 space-y-2">
+                            <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">{user.name}</h1>
+                            <p className="text-lg sm:text-xl text-gray-600 font-medium leading-tight">{user.headline || 'Impactful Professional at JobSocial'}</p>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2">
+                                <p className="text-sm text-gray-500 font-bold flex items-center gap-1.5 hover:text-blue-600 cursor-default transition-colors">
+                                    <MapPin size={16} className="text-blue-500" /> Los Angeles Metropolitan Area
+                                </p>
+                                <span className="hidden sm:inline text-gray-300">•</span>
+                                <span className="text-sm text-blue-600 font-black cursor-pointer hover:underline uppercase tracking-widest text-[11px]">Contact info</span>
+                            </div>
+                            <div className="pt-3 flex items-center gap-2">
+                                <div className="flex -space-x-3 overflow-hidden">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-100">
+                                            <div className="bg-blue-100 w-full h-full flex items-center justify-center text-blue-600 font-bold text-[10px]">{i}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <span className="text-xs font-black text-blue-600 hover:underline cursor-pointer transition-colors px-1 uppercase tracking-tighter">
+                                    {user.connections?.length || 0} Professional Connections
+                                </span>
+                            </div>
                         </div>
+
+                        {/* <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                            <button className="flex-1 bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-200 active:scale-95">Open to work</button>
+                            <button className="flex-1 border-2 border-blue-600 text-blue-600 px-8 py-2.5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-50 transition-all active:scale-95">Add section</button>
+                            <button className="flex items-center justify-center border-2 border-gray-200 text-gray-500 px-4 py-2.5 rounded-2xl font-black text-sm hover:bg-gray-50 transition-all active:scale-95">More</button>
+                        </div> */}
                     </div>
 
                     {/* About */}
-                    <div className="mt-8 bg-gray-50 p-6 rounded-lg">
-                        <h3 className="text-xl font-bold mb-3 text-gray-900">About</h3>
-                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                            {user.bio || "Write a summary to highlight your personality or work experience."}
-                        </p>
+                    <div className="mt-12 group/about">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-black text-gray-900 tracking-tight">About</h3>
+                            <button onClick={() => setIsEditing(true)} className="p-2 opacity-0 group-hover/about:opacity-100 transition-opacity text-gray-400 hover:text-blue-600">
+                                <Edit3 size={18} />
+                            </button>
+                        </div>
+                        <div className="bg-gray-50/50 border border-gray-100 p-6 sm:p-8 rounded-3xl relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
+                            <p className="text-gray-700 leading-relaxed text-[15px] font-medium whitespace-pre-wrap">
+                                {user.bio || "Craft a compelling summary to tell your professional story and highlight your unique contributions."}
+                            </p>
+                        </div>
                     </div>
 
                     {/* Skills */}
-                    <div className="mt-8">
-                        <h3 className="text-xl font-bold mb-3 text-gray-900">Skills</h3>
-                        <div className="flex flex-wrap gap-2">
+                    <div className="mt-12">
+                        <h3 className="text-xl font-black text-gray-900 tracking-tight mb-5">Top Skills</h3>
+                        <div className="flex flex-wrap gap-3">
                             {(user.skills && user.skills.length > 0 ? user.skills : []).map((skill, i) => (
-                                <span key={i} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-full text-sm hover:bg-gray-50 cursor-pointer shadow-sm transition">
+                                <span key={i} className="px-6 py-3 bg-white border border-gray-200 text-gray-800 font-black rounded-2xl text-[13px] uppercase tracking-wide hover:border-blue-500 hover:text-blue-600 cursor-pointer shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
                                     {skill}
                                 </span>
                             ))}
-                            {(!user.skills || user.skills.length === 0) && <span className="text-gray-500 italic">No skills added yet.</span>}
+                            {(!user.skills || user.skills.length === 0) && (
+                                <button onClick={() => setIsEditing(true)} className="px-6 py-4 border-2 border-dashed border-gray-200 rounded-3xl text-gray-400 font-bold text-sm w-full hover:border-blue-400 hover:text-blue-500 transition-all">
+                                    + Add your core professional skills
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <h3 className="text-xl font-bold text-gray-800 mb-4 px-2">Activity</h3>
+            <div className="flex items-center justify-between mb-6 px-2">
+                <h3 className="text-xl font-black text-gray-900 tracking-tight">Activity</h3>
+                <button className="text-blue-600 text-sm font-black uppercase tracking-widest hover:underline">See all posts</button>
+            </div>
             {posts.length > 0 ? (
-                posts.map(post => <PostCard key={post._id} post={post} />)
+                <div className="space-y-6">
+                    {posts.map(post => <PostCard key={post._id} post={post} onDelete={handleDeletePost} />)}
+                </div>
             ) : (
-                <div className="text-gray-500 text-center py-8 bg-white rounded-lg shadow">No recent activity</div>
+                <div className="text-gray-400 text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200 mb-10 overflow-hidden relative group/no-activity">
+                    <div className="absolute inset-0 bg-blue-50/10 opacity-0 group-hover/no-activity:opacity-100 transition-opacity"></div>
+                    <div className="relative z-10 flex flex-col items-center">
+                        <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-6 group-hover/no-activity:scale-110 transition-transform">
+                            <Edit3 size={40} className="text-gray-200" />
+                        </div>
+                        <p className="font-black text-gray-900 text-lg tracking-tight mb-2">Build Your Professional Narrative</p>
+                        <p className="text-sm font-medium text-gray-500 max-w-xs leading-relaxed mb-8">Share your insights, achievements, or career updates to engage with your network.</p>
+                        <Link to="/" className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95">Create First Post</Link>
+                    </div>
+                </div>
             )}
 
             {/* Edit Modal - Z-Index 60 to appear above Navbar (Z-50) */}
@@ -166,37 +207,32 @@ export default function Profile() {
                         </div>
                         <form onSubmit={handleUpdate} className="p-6 space-y-6">
 
-                            {/* Image Uploads */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Profile Picture</label>
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-16 h-16 rounded-full bg-gray-100 border overflow-hidden">
-                                            {profilePicFile ? (
-                                                <img src={URL.createObjectURL(profilePicFile)} className="w-full h-full object-cover" />
-                                            ) : user.profilePic ? (
-                                                <img src={`http://localhost:5000${user.profilePic}`} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold">{user.name?.[0]}</div>
-                                            )}
-                                        </div>
-                                        <input type="file" accept="image/*" onChange={e => setProfilePicFile(e.target.files[0])} className="text-sm" />
+                            {/* Image Upload */}
+                            <div className="flex justify-center pb-4">
+                                <div className="relative group">
+                                    <div className="w-32 h-32 rounded-full bg-gray-100 border-4 border-white shadow-md overflow-hidden relative">
+                                        {profilePicFile ? (
+                                            <img src={URL.createObjectURL(profilePicFile)} className="w-full h-full object-cover" />
+                                        ) : user.profilePic ? (
+                                            <img src={`http://localhost:5000${user.profilePic}`} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-3xl">{user.name?.[0]}</div>
+                                        )}
+                                        <label
+                                            htmlFor="profile-upload"
+                                            className="absolute inset-0 bg-black/40 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                        >
+                                            <Camera size={24} />
+                                        </label>
                                     </div>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Cover Image</label>
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-24 h-12 rounded bg-gray-100 border overflow-hidden">
-                                            {coverImageFile ? (
-                                                <img src={URL.createObjectURL(coverImageFile)} className="w-full h-full object-cover" />
-                                            ) : user.coverImage ? (
-                                                <img src={`http://localhost:5000${user.coverImage}`} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Cover</div>
-                                            )}
-                                        </div>
-                                        <input type="file" accept="image/*" onChange={e => setCoverImageFile(e.target.files[0])} className="text-sm" />
-                                    </div>
+                                    <input
+                                        type="file"
+                                        id="profile-upload"
+                                        accept="image/*"
+                                        onChange={e => setProfilePicFile(e.target.files[0])}
+                                        className="hidden"
+                                    />
+                                    <p className="text-center text-xs text-gray-500 mt-2 font-semibold">Click photo to change profile picture</p>
                                 </div>
                             </div>
 

@@ -34,6 +34,12 @@ app.use(morgan('dev'))
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
+// Attach io to request for controllers
+app.use((req, res, next) => {
+    req.io = io
+    next()
+})
+
 // Routes
 app.use('/api/auth', authRoutes)
 app.use('/api/jobs', jobRoutes)
@@ -54,12 +60,6 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id)
     })
-})
-
-// Attach io to request for controllers
-app.use((req, res, next) => {
-    req.io = io
-    next()
 })
 
 // Global Error Handler

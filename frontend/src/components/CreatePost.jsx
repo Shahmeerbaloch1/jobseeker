@@ -3,6 +3,7 @@ import { UserContext } from '../context/UserContext'
 import { Image, Paperclip, Send, X } from 'lucide-react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { Link } from 'react-router-dom'
 
 export default function CreatePost({ onPostCreated }) {
     const { user } = useContext(UserContext)
@@ -53,52 +54,73 @@ export default function CreatePost({ onPostCreated }) {
     }
 
     return (
-        <div className="bg-white rounded-lg shadow p-4 mb-4">
-            <div className="flex gap-3">
-                {user.profilePic ? (
-                    <img src={`http://localhost:5000${user.profilePic}`} className="w-12 h-12 rounded-full object-cover" />
-                ) : (
-                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-500">
-                        {user.name[0]}
-                    </div>
-                )}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 transition-all hover:shadow-md">
+            <div className="flex gap-4">
+                <Link to="/profile">
+                    {user.profilePic ? (
+                        <img src={`http://localhost:5000${user.profilePic}`} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
+                    ) : (
+                        <div className="w-12 h-12 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-full flex items-center justify-center font-bold text-white shadow-md">
+                            {user.name[0]}
+                        </div>
+                    )}
+                </Link>
                 <div className="flex-1">
                     <textarea
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        placeholder="Start a post..."
-                        className="w-full border rounded-lg p-3 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                        placeholder="Share an update or a job opportunity..."
+                        className="w-full bg-gray-50 border-none rounded-2xl p-4 text-gray-800 placeholder-gray-400 focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none resize-none text-[15px]"
                         rows={3}
                     />
+
                     {selectedFile && (
-                        <div className="mt-2 relative bg-gray-100 p-2 rounded">
-                            {preview ? (
-                                <img src={preview} alt="Upload preview" className="max-h-60 rounded" />
-                            ) : (
-                                <span className="text-sm text-blue-600">{selectedFile.name}</span>
-                            )}
-                            <button onClick={() => { setSelectedFile(null); setPreview(null) }} className="absolute top-1 right-1 bg-gray-800 text-white rounded-full p-1">
-                                <X size={14} />
+                        <div className="mt-4 relative group">
+                            <div className="overflow-hidden rounded-2xl border border-gray-100 bg-gray-50">
+                                {preview ? (
+                                    <img src={preview} alt="Upload preview" className="w-full max-h-80 object-cover" />
+                                ) : (
+                                    <div className="flex items-center gap-3 p-4">
+                                        <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                                            <Paperclip size={20} />
+                                        </div>
+                                        <span className="text-sm font-bold text-gray-700 truncate">{selectedFile.name}</span>
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                onClick={() => { setSelectedFile(null); setPreview(null) }}
+                                className="absolute -top-2 -right-2 bg-white text-red-500 rounded-full p-1.5 shadow-lg hover:bg-red-50 transition-colors border border-red-100"
+                            >
+                                <X size={16} />
                             </button>
                         </div>
                     )}
-                    <div className="flex justify-between items-center mt-3">
-                        <div className="flex space-x-2">
-                            <label className="cursor-pointer p-2 hover:bg-gray-100 rounded-full text-gray-600">
-                                <Image size={20} />
+
+                    <div className="flex justify-between items-center mt-4">
+                        <div className="flex gap-1">
+                            <label className="flex items-center gap-2 cursor-pointer px-4 py-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors group">
+                                <Image size={20} className="group-hover:text-blue-600 transition-colors" />
+                                <span className="text-xs font-bold hidden sm:block">Photo / Video</span>
                                 <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
                             </label>
-                            <label className="cursor-pointer p-2 hover:bg-gray-100 rounded-full text-gray-600">
-                                <Paperclip size={20} />
+                            <label className="flex items-center gap-2 cursor-pointer px-4 py-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors group">
+                                <Paperclip size={20} className="group-hover:text-blue-600 transition-colors" />
+                                <span className="text-xs font-bold hidden sm:block">Document</span>
                                 <input type="file" accept=".pdf" onChange={handleFileSelect} className="hidden" />
                             </label>
                         </div>
                         <button
                             onClick={handleSubmit}
                             disabled={loading || (!content && !selectedFile)}
-                            className="bg-blue-600 text-white px-4 py-1.5 rounded-full font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                            className="bg-blue-600 text-white px-6 py-2 rounded-full font-black text-sm hover:bg-blue-700 disabled:opacity-50 disabled:bg-gray-300 transition-all shadow-lg shadow-blue-200 flex items-center gap-2 active:scale-95"
                         >
-                            <Send size={16} /> Post
+                            {loading ? (
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            ) : (
+                                <Send size={16} />
+                            )}
+                            Post
                         </button>
                     </div>
                 </div>

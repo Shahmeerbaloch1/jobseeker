@@ -39,7 +39,6 @@ export function UserProvider({ children }) {
                 fetchUnreadCount(userId)
             }
         } catch (error) {
-            console.error('Failed to fetch user', error)
             logout() // invalid token
         } finally {
             setLoading(false)
@@ -56,7 +55,7 @@ export function UserProvider({ children }) {
                 setUnreadCount(prev => prev + 1)
             })
         } catch (error) {
-            console.error('Socket connection failed', error)
+            // Socket failed
         }
     }
 
@@ -65,7 +64,7 @@ export function UserProvider({ children }) {
             const res = await axios.get(`http://localhost:5000/api/messages/unread/${userId}`)
             setUnreadCount(res.data.count)
         } catch (error) {
-            console.error('Failed to fetch unread count', error)
+            // Unread count failed
         }
     }
 
