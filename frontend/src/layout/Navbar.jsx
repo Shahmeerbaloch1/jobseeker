@@ -1,18 +1,21 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useContext, useState, useRef, useEffect } from 'react'
 import { UserContext } from '../context/UserContext'
-import { Bell, MessageSquare, LogOut, User as UserIcon, Briefcase, Home, Users } from 'lucide-react'
+import { Bell, MessageSquare, LogOut, User as UserIcon, Briefcase, Home, Users, Bookmark, ArrowLeft } from 'lucide-react'
 
 export default function Navbar() {
     const { user, logout, unreadCount } = useContext(UserContext)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const menuRef = useRef(null)
     const navigate = useNavigate()
+    const location = useLocation()
 
     const handleLogout = () => {
         logout()
         navigate('/login')
     }
+
+    const isActive = (path) => location.pathname === path
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -25,17 +28,33 @@ export default function Navbar() {
         return () => document.removeEventListener('mousedown', handleClickOutside)
     }, [])
 
+    const getMediaUrl = (url) => {
+        if (!url) return ''
+        return url.startsWith('http') ? url : `http://localhost:5000${url}`
+    }
+
     return (
         <>
             {/* Top Navbar */}
             <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 h-16 flex items-center shadow-sm">
                 <div className="container mx-auto px-4 flex items-center justify-between gap-4">
-                    <Link to="/" className="flex items-center gap-2">
-                        <div className="bg-blue-600 p-1.5 rounded-lg shadow-lg shadow-blue-200">
-                            <Briefcase size={22} className="text-white" />
-                        </div>
-                        <span className="text-2xl font-black text-gray-900 tracking-tighter">Job<span className="text-blue-600">Social</span></span>
-                    </Link>
+                    <div className="flex items-center gap-3">
+                        {location.pathname !== '/' && (
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="p-2 hover:bg-gray-100 rounded-xl transition-all active:scale-90 text-gray-500 hover:text-blue-600"
+                                title="Go Back"
+                            >
+                                <ArrowLeft size={22} strokeWidth={2.5} />
+                            </button>
+                        )}
+                        <Link to="/" className="flex items-center gap-2">
+                            <div className="bg-blue-600 p-1.5 rounded-lg shadow-lg shadow-blue-200">
+                                <Briefcase size={22} className="text-white" />
+                            </div>
+                            <span className="text-2xl font-black text-gray-900 tracking-tighter">Job<span className="text-blue-600">Social</span></span>
+                        </Link>
+                    </div>
 
                     <div className="flex-1 max-w-md hidden md:block">
                         <div className="relative group">
@@ -52,30 +71,30 @@ export default function Navbar() {
                         <div className="flex items-center gap-2 md:gap-6">
                             {/* Desktop Navigation Links */}
                             <div className="hidden md:flex items-center space-x-8">
-                                <Link to="/" className="flex flex-col items-center text-gray-500 hover:text-blue-600 transition-colors group">
-                                    <Home size={22} className="group-hover:scale-110 transition-transform" />
-                                    <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">Home</span>
+                                <Link to="/" className={`flex flex-col items-center transition-all group ${isActive('/') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}>
+                                    <Home size={22} className={`${isActive('/') ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
+                                    <span className={`text-[10px] font-bold mt-1 uppercase tracking-wider ${isActive('/') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>Home</span>
                                 </Link>
-                                <Link to="/network" className="flex flex-col items-center text-gray-500 hover:text-blue-600 transition-colors group">
-                                    <Users size={22} className="group-hover:scale-110 transition-transform" />
-                                    <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">Network</span>
+                                <Link to="/network" className={`flex flex-col items-center transition-all group ${isActive('/network') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}>
+                                    <Users size={22} className={`${isActive('/network') ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
+                                    <span className={`text-[10px] font-bold mt-1 uppercase tracking-wider ${isActive('/network') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>Network</span>
                                 </Link>
-                                <Link to="/jobs" className="flex flex-col items-center text-gray-500 hover:text-blue-600 transition-colors group">
-                                    <Briefcase size={22} className="group-hover:scale-110 transition-transform" />
-                                    <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">Jobs</span>
+                                <Link to="/jobs" className={`flex flex-col items-center transition-all group ${isActive('/jobs') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}>
+                                    <Briefcase size={22} className={`${isActive('/jobs') ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
+                                    <span className={`text-[10px] font-bold mt-1 uppercase tracking-wider ${isActive('/jobs') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>Jobs</span>
                                 </Link>
-                                <Link to="/messaging" className="flex flex-col items-center text-gray-500 hover:text-blue-600 transition-colors group relative">
-                                    <MessageSquare size={22} className="group-hover:scale-110 transition-transform" />
+                                <Link to="/messaging" className={`flex flex-col items-center transition-all group relative ${isActive('/messaging') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}>
+                                    <MessageSquare size={22} className={`${isActive('/messaging') ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
                                     {unreadCount > 0 && (
                                         <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] border-2 border-white font-black px-1.5 py-0.5 rounded-full animate-bounce">
                                             {unreadCount}
                                         </span>
                                     )}
-                                    <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">Messaging</span>
+                                    <span className={`text-[10px] font-bold mt-1 uppercase tracking-wider ${isActive('/messaging') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>Messaging</span>
                                 </Link>
-                                <Link to="/notifications" className="flex flex-col items-center text-gray-500 hover:text-blue-600 transition-colors group">
-                                    <Bell size={22} className="group-hover:scale-110 transition-transform" />
-                                    <span className="text-[10px] font-bold mt-1 uppercase tracking-wider">Notifications</span>
+                                <Link to="/notifications" className={`flex flex-col items-center transition-all group ${isActive('/notifications') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}>
+                                    <Bell size={22} className={`${isActive('/notifications') ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
+                                    <span className={`text-[10px] font-bold mt-1 uppercase tracking-wider ${isActive('/notifications') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>Notifications</span>
                                 </Link>
                             </div>
 
@@ -85,10 +104,10 @@ export default function Navbar() {
                             <div className="relative" ref={menuRef}>
                                 <button
                                     onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                    className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition focus:outline-none border-2 border-transparent hover:border-blue-100"
+                                    className={`flex items-center gap-2 p-1 rounded-full transition focus:outline-none border-2 ${isMenuOpen || isActive('/profile') ? 'border-blue-100 bg-blue-50/50' : 'border-transparent hover:bg-gray-100 hover:border-blue-50'}`}
                                 >
                                     {user.profilePic ? (
-                                        <img src={`http://localhost:5000${user.profilePic}`} alt="Profile" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white shadow-sm" />
+                                        <img src={getMediaUrl(user.profilePic)} alt="Profile" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-white shadow-sm" />
                                     ) : (
                                         <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
                                             {user.name?.[0]}
@@ -104,10 +123,18 @@ export default function Navbar() {
                                         <Link
                                             to="/profile"
                                             onClick={() => setIsMenuOpen(false)}
-                                            className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors font-semibold"
+                                            className={`flex items-center gap-3 px-4 py-3 transition-colors font-semibold ${isActive('/profile') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`}
                                         >
                                             <UserIcon size={18} /> View Profile
                                         </Link>
+                                        <Link
+                                            to="/my-items"
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className={`flex items-center gap-3 px-4 py-3 transition-colors font-semibold ${isActive('/my-items') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`}
+                                        >
+                                            <Bookmark size={18} /> My Items
+                                        </Link>
+                                        <div className="h-px bg-gray-50 mx-2"></div>
                                         <button
                                             onClick={() => {
                                                 handleLogout();
@@ -133,41 +160,47 @@ export default function Navbar() {
             {/* Mobile Bottom Navigation */}
             {user && (
                 <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[60] h-[72px] pb-[safe-area-inset-bottom]">
-                    <div className="h-full flex items-center justify-around px-2">
-                        <Link to="/" className="flex flex-col items-center justify-center gap-1 min-w-[64px] text-gray-400 hover:text-blue-600 active:scale-95 transition-all">
-                            <div className="p-1 rounded-xl">
-                                <Home size={26} />
+                    <div className="h-full flex items-center justify-around px-1 sm:px-2">
+                        <Link to="/" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 ${isActive('/') ? 'text-blue-600' : 'text-gray-400'}`}>
+                            <div className={`p-1 rounded-xl transition-colors ${isActive('/') ? 'bg-blue-50' : ''}`}>
+                                <Home size={22} />
                             </div>
-                            <span className="text-[10px] font-bold uppercase tracking-tight">Home</span>
+                            <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Home</span>
                         </Link>
-                        <Link to="/network" className="flex flex-col items-center justify-center gap-1 min-w-[64px] text-gray-400 hover:text-blue-600 active:scale-95 transition-all">
-                            <div className="p-1 rounded-xl">
-                                <Users size={26} />
+                        <Link to="/network" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 ${isActive('/network') ? 'text-blue-600' : 'text-gray-400'}`}>
+                            <div className={`p-1 rounded-xl transition-colors ${isActive('/network') ? 'bg-blue-50' : ''}`}>
+                                <Users size={22} />
                             </div>
-                            <span className="text-[10px] font-bold uppercase tracking-tight">Network</span>
+                            <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Network</span>
                         </Link>
-                        <Link to="/jobs" className="flex flex-col items-center justify-center gap-1 min-w-[64px] text-gray-400 hover:text-blue-600 active:scale-95 transition-all">
-                            <div className="p-1 rounded-xl">
-                                <Briefcase size={26} />
+                        <Link to="/jobs" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 ${isActive('/jobs') ? 'text-blue-600' : 'text-gray-400'}`}>
+                            <div className={`p-1 rounded-xl transition-colors ${isActive('/jobs') ? 'bg-blue-50' : ''}`}>
+                                <Briefcase size={22} />
                             </div>
-                            <span className="text-[10px] font-bold uppercase tracking-tight">Jobs</span>
+                            <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Jobs</span>
                         </Link>
-                        <Link to="/messaging" className="flex flex-col items-center justify-center gap-1 min-w-[64px] text-gray-400 hover:text-blue-600 active:scale-95 transition-all relative">
-                            <div className="p-1 rounded-xl">
-                                <MessageSquare size={26} />
+                        <Link to="/my-items" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 ${isActive('/my-items') ? 'text-blue-600' : 'text-gray-400'}`}>
+                            <div className={`p-1 rounded-xl transition-colors ${isActive('/my-items') ? 'bg-blue-50' : ''}`}>
+                                <Bookmark size={22} />
+                            </div>
+                            <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Items</span>
+                        </Link>
+                        <Link to="/messaging" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 relative ${isActive('/messaging') ? 'text-blue-600' : 'text-gray-400'}`}>
+                            <div className={`p-1 rounded-xl transition-colors ${isActive('/messaging') ? 'bg-blue-50' : ''}`}>
+                                <MessageSquare size={22} />
                             </div>
                             {unreadCount > 0 && (
-                                <span className="absolute top-1 right-3 bg-red-600 text-white text-[10px] border-2 border-white font-black px-1.5 py-0.5 rounded-full">
+                                <span className="absolute top-1 right-2 bg-red-600 text-white text-[9px] border-2 border-white font-black px-1.5 py-0.5 rounded-full">
                                     {unreadCount}
                                 </span>
                             )}
-                            <span className="text-[10px] font-bold uppercase tracking-tight">Messages</span>
+                            <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Chat</span>
                         </Link>
-                        <Link to="/notifications" className="flex flex-col items-center justify-center gap-1 min-w-[64px] text-gray-400 hover:text-blue-600 active:scale-95 transition-all">
-                            <div className="p-1 rounded-xl">
-                                <Bell size={26} />
+                        <Link to="/notifications" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 ${isActive('/notifications') ? 'text-blue-600' : 'text-gray-400'}`}>
+                            <div className={`p-1 rounded-xl transition-colors ${isActive('/notifications') ? 'bg-blue-50' : ''}`}>
+                                <Bell size={22} />
                             </div>
-                            <span className="text-[10px] font-bold uppercase tracking-tight">Alerts</span>
+                            <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Alerts</span>
                         </Link>
                     </div>
                 </div>

@@ -3,7 +3,7 @@ import { UserContext } from '../context/UserContext'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import PostCard from '../components/PostCard'
-import { MapPin, Edit3, X, Camera } from 'lucide-react'
+import { MapPin, Edit3, X, Camera, Users, MoreHorizontal } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function Profile() {
@@ -69,6 +69,11 @@ export default function Profile() {
         }
     }
 
+    const getMediaUrl = (url) => {
+        if (!url) return ''
+        return url.startsWith('http') ? url : `http://localhost:5000${url}`
+    }
+
     if (!user) return (
         <div className="flex flex-col items-center justify-center p-20 text-gray-400">
             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -91,33 +96,33 @@ export default function Profile() {
                     </button>
                 </div>
 
-                <div className="px-6 sm:px-10 pb-10 relative">
+                <div className="px-4 sm:px-10 pb-8 relative">
                     {/* Profile Pic - Positioned half-on/half-off the banner */}
                     <div className="relative -mt-12 sm:-mt-16 inline-block">
-                        <div className="border-4 sm:border-[6px] border-white rounded-3xl shadow-2xl bg-white overflow-hidden w-28 h-28 sm:w-40 sm:h-40 group/pic">
+                        <div className="border-4 sm:border-[6px] border-white rounded-3xl shadow-2xl bg-white overflow-hidden w-24 h-24 sm:w-40 sm:h-40 group/pic">
                             {user.profilePic ? (
-                                <img src={`http://localhost:5000${user.profilePic}`} className="w-full h-full object-cover transition-transform duration-500 group-hover/pic:scale-110" />
+                                <img src={getMediaUrl(user.profilePic)} className="w-full h-full object-cover transition-transform duration-500 group-hover/pic:scale-110" />
                             ) : (
-                                <div className="w-full h-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-4xl sm:text-6xl text-white">
+                                <div className="w-full h-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-3xl sm:text-6xl text-white">
                                     {user.name?.[0]}
                                 </div>
                             )}
                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/pic:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => setIsEditing(true)}>
-                                <Camera size={24} className="text-white" />
+                                <Camera size={20} className="text-white sm:w-6 sm:h-6" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-6 flex flex-col lg:flex-row justify-between items-start gap-6">
-                        <div className="flex-1 space-y-2">
-                            <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">{user.name}</h1>
-                            <p className="text-lg sm:text-xl text-gray-600 font-medium leading-tight">{user.headline || 'Impactful Professional at JobSocial'}</p>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2">
-                                <p className="text-sm text-gray-500 font-bold flex items-center gap-1.5 hover:text-blue-600 cursor-default transition-colors">
-                                    <MapPin size={16} className="text-blue-500" /> Los Angeles Metropolitan Area
+                    <div className="mt-4 sm:mt-6 flex flex-col lg:flex-row justify-between items-start gap-4 sm:gap-6">
+                        <div className="flex-1 space-y-1 sm:space-y-2">
+                            <h1 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">{user.name}</h1>
+                            <p className="text-base sm:text-xl text-gray-600 font-medium leading-tight">{user.headline || 'Impactful Professional at JobSocial'}</p>
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1.5 sm:pt-2">
+                                <p className="text-xs sm:text-sm text-gray-500 font-bold flex items-center gap-1.5 hover:text-blue-600 cursor-default transition-colors">
+                                    <MapPin size={14} className="text-blue-500 sm:w-4 sm:h-4" /> Los Angeles Metropolitan Area
                                 </p>
                                 <span className="hidden sm:inline text-gray-300">•</span>
-                                <span className="text-sm text-blue-600 font-black cursor-pointer hover:underline uppercase tracking-widest text-[11px]">Contact info</span>
+                                <span className="text-[11px] sm:text-sm text-blue-600 font-black cursor-pointer hover:underline uppercase tracking-widest">Contact info</span>
                             </div>
                             <div className="pt-3 flex items-center gap-2">
                                 <div className="flex -space-x-3 overflow-hidden">
@@ -214,7 +219,7 @@ export default function Profile() {
                                         {profilePicFile ? (
                                             <img src={URL.createObjectURL(profilePicFile)} className="w-full h-full object-cover" />
                                         ) : user.profilePic ? (
-                                            <img src={`http://localhost:5000${user.profilePic}`} className="w-full h-full object-cover" />
+                                            <img src={getMediaUrl(user.profilePic)} className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-3xl">{user.name?.[0]}</div>
                                         )}

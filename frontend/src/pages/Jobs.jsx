@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { UserContext } from '../context/UserContext'
 import axios from 'axios'
-import { Search, MapPin, Briefcase, DollarSign, Clock, Plus, X } from 'lucide-react'
+import { Search, MapPin, Briefcase, DollarSign, Clock, Plus, X, Building } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Jobs() {
@@ -47,17 +47,17 @@ export default function Jobs() {
     }
 
     return (
-        <div className="max-w-5xl mx-auto px-2">
+        <div className="max-w-5xl mx-auto px-2 pb-20 md:pb-0">
             {user.role === 'company' ? (
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 sm:p-12 mb-10 transition-all hover:shadow-md">
+                <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 sm:p-10 mb-8 sm:mb-10 transition-all hover:shadow-md">
                     <div className="max-w-3xl mx-auto">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="p-3 bg-blue-100 rounded-2xl text-blue-600">
-                                <Plus size={28} strokeWidth={2.5} />
+                        <div className="flex items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+                            <div className="p-2.5 sm:p-3 bg-blue-100 rounded-2xl text-blue-600">
+                                <Plus size={24} className="sm:w-7 sm:h-7" strokeWidth={2.5} />
                             </div>
                             <div>
-                                <h2 className="text-3xl font-black text-gray-900 tracking-tight">Hire Exceptional Talent</h2>
-                                <p className="text-gray-500 font-medium">Post your professional opportunity and reach thousands.</p>
+                                <h2 className="text-xl sm:text-3xl font-black text-gray-900 tracking-tight">Hire Exceptional Talent</h2>
+                                <p className="text-xs sm:text-base text-gray-500 font-medium">Post your professional opportunity and reach thousands.</p>
                             </div>
                         </div>
                         <PostJobForm user={user} />
@@ -65,69 +65,68 @@ export default function Jobs() {
                 </div>
             ) : (
                 <>
-                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-8 relative overflow-hidden group/search">
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-5 sm:p-8 mb-6 sm:mb-8 relative overflow-hidden group/search">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full -mr-20 -mt-20 blur-3xl group-hover/search:bg-blue-100/50 transition-colors"></div>
-                        <h2 className="text-2xl sm:text-3xl font-black mb-6 text-gray-900 tracking-tight leading-tight">Find Your Next <br className="sm:hidden" /><span className="text-blue-600 underline decoration-blue-200 decoration-4">Professional Leap</span></h2>
-                        <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4 relative z-10">
+                        <h2 className="text-xl sm:text-3xl font-black mb-4 sm:mb-6 text-gray-900 tracking-tight leading-tight">Find Your Next <br className="sm:hidden" /><span className="text-blue-600 underline decoration-blue-200 decoration-4">Professional Leap</span></h2>
+                        <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-3 sm:gap-4 relative z-10">
                             <div className="flex-1 relative group">
-                                <Search className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                                <Search className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
                                 <input
                                     type="text"
-                                    placeholder="Keywords: React, Product Manager, Google..."
+                                    placeholder="Keywords: React, UI..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="w-full pl-12 pr-4 bg-gray-50 border-none h-12 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-sm font-medium"
+                                    className="w-full pl-11 pr-4 bg-gray-50 border-none h-11 sm:h-12 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-sm font-medium"
                                 />
                             </div>
                             <div className="flex-1 relative group">
-                                <MapPin className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                                <MapPin className="absolute left-4 top-3.5 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
                                 <input
                                     type="text"
-                                    placeholder="Remote, London, New York..."
+                                    placeholder="Location..."
                                     value={location}
                                     onChange={(e) => setLocation(e.target.value)}
-                                    className="w-full pl-12 pr-4 bg-gray-50 border-none h-12 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-sm font-medium"
+                                    className="w-full pl-11 pr-4 bg-gray-50 border-none h-11 sm:h-12 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-sm font-medium"
                                 />
                             </div>
-                            <button type="submit" className="bg-blue-600 text-white px-10 h-12 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95">
+                            <button type="submit" className="bg-blue-600 text-white px-8 h-11 sm:h-12 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-95">
                                 Search
                             </button>
                         </form>
                     </div>
 
-                    <div className="space-y-4 mb-10">
+                    <div className="space-y-3 sm:space-y-4 mb-10">
                         {jobs.length === 0 ? (
-                            <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-100">
-                                <Briefcase size={48} className="mx-auto text-gray-200 mb-4" />
-                                <p className="text-gray-500 font-black text-lg">Opportunities are loading...</p>
-                                <p className="text-gray-400 text-sm mt-1">Try adjusting your filters for better results.</p>
+                            <div className="text-center py-16 sm:py-20 bg-white rounded-3xl border-2 border-dashed border-gray-100">
+                                <Briefcase size={40} className="sm:w-12 sm:h-12 mx-auto text-gray-200 mb-4" />
+                                <p className="text-gray-500 font-black text-base sm:text-lg">Opportunities are loading...</p>
+                                <p className="text-gray-400 text-xs sm:text-sm mt-1">Try adjusting your filters for better results.</p>
                             </div>
                         ) : (
                             jobs.map(job => (
-                                <div key={job._id} className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl hover:border-blue-100 transition-all group/job">
-                                    <div className="flex flex-col sm:row gap-6 justify-between items-start">
-                                        <div className="flex flex-col sm:flex-row gap-6 flex-1 w-full">
-                                            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shadow-sm border border-blue-100 group-hover/job:bg-blue-600 group-hover/job:text-white transition-all duration-300">
-                                                <Briefcase size={32} />
+                                <div key={job._id} className="bg-white p-5 sm:p-8 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl hover:border-blue-100 transition-all group/job">
+                                    <div className="flex flex-col gap-5 sm:gap-6">
+                                        <div className="flex gap-4 sm:gap-6 items-start">
+                                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 shrink-0 shadow-sm border border-blue-100 group-hover/job:bg-blue-600 group-hover/job:text-white transition-all duration-300">
+                                                <Briefcase size={24} className="sm:w-8 sm:h-8" />
                                             </div>
-                                            <div className="flex-1 space-y-1.5">
-                                                <Link to={`/jobs/${job._id}`} className="text-xl font-black text-gray-900 hover:text-blue-600 transition-colors leading-tight line-clamp-1">{job.title}</Link>
-                                                <p className="text-gray-600 font-bold flex items-center gap-2">
-                                                    <span className="text-gray-900">{job.company}</span>
-                                                    <span className="text-gray-300">•</span>
-                                                    <span className="text-gray-500 text-sm font-medium flex items-center gap-1"><MapPin size={14} /> {job.location}</span>
-                                                </p>
-                                                <div className="flex flex-wrap gap-2 mt-3 pt-1">
-                                                    <span className="bg-green-50 text-green-700 text-[10px] sm:text-xs px-3 py-1.5 rounded-xl font-black uppercase tracking-widest border border-green-100">{job.type || 'Full-time'}</span>
-                                                    <span className="bg-blue-50 text-blue-700 text-[10px] sm:text-xs px-3 py-1.5 rounded-xl font-black uppercase tracking-widest border border-blue-100">{job.salary || '$120k - $150k'}</span>
-                                                    <span className="bg-gray-50 text-gray-700 text-[10px] sm:text-xs px-3 py-1.5 rounded-xl font-black uppercase tracking-widest border border-gray-100">Actively Hiring</span>
+                                            <div className="flex-1 min-w-0">
+                                                <Link to={`/jobs/${job._id}`} className="text-lg sm:text-xl font-black text-gray-900 hover:text-blue-600 transition-colors leading-tight line-clamp-1 block">{job.title}</Link>
+                                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 font-bold text-sm">
+                                                    <span className="text-gray-900 truncate">{job.company}</span>
+                                                    <span className="text-gray-300 hidden xs:inline">•</span>
+                                                    <span className="text-gray-500 flex items-center gap-1"><MapPin size={12} /> {job.location}</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-3 sm:mt-4">
+                                                    <span className="bg-green-50 text-green-700 text-[9px] sm:text-[11px] px-2.5 py-1 rounded-lg font-black uppercase tracking-widest border border-green-100">{job.type || 'Full-time'}</span>
+                                                    <span className="bg-blue-50 text-blue-700 text-[9px] sm:text-[11px] px-2.5 py-1 rounded-lg font-black uppercase tracking-widest border border-blue-100">{job.salary || '$120k'}</span>
+                                                    <span className="bg-gray-50 text-gray-700 text-[9px] sm:text-[11px] px-2.5 py-1 rounded-lg font-black uppercase tracking-widest border border-gray-100 hidden xs:block">Actively Hiring</span>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-50 flex items-center justify-between sm:justify-end gap-4">
-                                            <div className="hidden sm:block text-right">
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Posted</p>
-                                                <p className="text-xs font-black text-gray-800">2 days ago</p>
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-gray-50">
+                                            <div className="flex items-center gap-3">
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Posted <span className="text-gray-800 ml-1">2 days ago</span></p>
                                             </div>
                                             {(() => {
                                                 const application = myApplications.find(app => (app.job._id || app.job) === job._id)
@@ -139,8 +138,8 @@ export default function Jobs() {
                                                         stopped: 'bg-gray-100 text-gray-700 border-gray-200'
                                                     }
                                                     return (
-                                                        <span className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest border ${statusColors[application.status] || statusColors.pending} flex items-center gap-2`}>
-                                                            <div className={`w-2 h-2 rounded-full animate-pulse ${application.status === 'selected' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                                                        <span className={`px-5 py-2.5 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest border ${statusColors[application.status] || statusColors.pending} flex items-center justify-center gap-2`}>
+                                                            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${application.status === 'selected' ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
                                                             {application.status === 'selected' ? 'Shortlisted' :
                                                                 application.status === 'rejected' ? 'Passed' :
                                                                     application.status === 'stopped' ? 'Inactive' :
@@ -149,7 +148,7 @@ export default function Jobs() {
                                                     )
                                                 }
                                                 return (
-                                                    <Link to={`/jobs/${job._id}`} className="bg-blue-600 text-white px-10 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95 text-center flex-1 sm:flex-none">
+                                                    <Link to={`/jobs/${job._id}`} className="bg-blue-600 text-white px-8 py-2.5 rounded-xl font-black text-[10px] sm:text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-50 active:scale-95 text-center">
                                                         Apply Now
                                                     </Link>
                                                 )

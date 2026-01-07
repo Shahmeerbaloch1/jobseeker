@@ -1,6 +1,8 @@
 import User from '../models/User.js'
 import Connection from '../models/Connection.js'
 import Notification from '../models/Notification.js'
+import cloudinary from '../config/cloudinary.js'
+import fs from 'fs'
 
 export const getUserProfile = async (req, res) => {
     try {
@@ -18,10 +20,14 @@ export const updateUserProfile = async (req, res) => {
 
         if (req.files) {
             if (req.files.profilePic) {
-                updateData.profilePic = `/uploads/${req.files.profilePic[0].filename}`
+                const result = await cloudinary.uploader.upload(req.files.profilePic[0].path, { folder: 'profiles' })
+                updateData.profilePic = result.secure_url
+                fs.unlinkSync(req.files.profilePic[0].path)
             }
             if (req.files.coverImage) {
-                updateData.coverImage = `/uploads/${req.files.coverImage[0].filename}`
+                const result = await cloudinary.uploader.upload(req.files.coverImage[0].path, { folder: 'covers' })
+                updateData.coverImage = result.secure_url
+                fs.unlinkSync(req.files.coverImage[0].path)
             }
         }
 
@@ -128,6 +134,18 @@ export const acceptConnectionRequest = async (req, res) => {
         })
 
         res.json(connection)
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
+export const rejectConnectionRequest = async (req, res) => {
+    try {
+        const { connectionId } = req.body
+        const connection = await Connection.findByIdAndDelete(connectionId)
+        if (!connection) return res.status(404).json({ message: 'Connection not found' })
+
+        res.json({ message: 'Connection request ignored' })
     } catch (error) {
         res.status(500).json({ message: error.message })
     }

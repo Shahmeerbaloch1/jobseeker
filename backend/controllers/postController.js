@@ -1,17 +1,36 @@
 import Post from '../models/Post.js'
 import Comment from '../models/Comment.js'
 import Notification from '../models/Notification.js'
+import cloudinary from '../config/cloudinary.js'
+import fs from 'fs'
 
 export const createPost = async (req, res) => {
     try {
-        const { content, mediaType } = req.body
+        const { content, mediaType, videoStartTime } = req.body
         let mediaUrl = ''
+
         if (req.file) {
-            mediaUrl = `/uploads/${req.file.filename}`
+            const uploadOptions = {
+                resource_type: 'auto', // Detects image, video, or raw (pdf)
+                folder: 'job-social'
+            }
+
+            // Apply 10s trim if it's a video
+            if (mediaType === 'video') {
+                uploadOptions.resource_type = 'video'
+                uploadOptions.start_offset = videoStartTime || 0
+                uploadOptions.duration = 10
+            }
+
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, uploadOptions)
+            mediaUrl = uploadResult.secure_url
+
+            // Clean up: Delete local file after upload
+            fs.unlinkSync(req.file.path)
         }
 
         const post = await Post.create({
-            author: req.body.author, // Should ideally come from auth middleware req.user
+            author: req.body.author,
             content,
             mediaUrl,
             mediaType: req.file ? mediaType : 'none'

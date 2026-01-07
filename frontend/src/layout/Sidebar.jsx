@@ -7,6 +7,11 @@ export default function Sidebar() {
     const { user } = useContext(UserContext)
     if (!user) return null
 
+    const getMediaUrl = (url) => {
+        if (!url) return ''
+        return url.startsWith('http') ? url : `http://localhost:5000${url}`
+    }
+
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-20 transition-all hover:shadow-md">
             {/* Header / Cover Placeholder */}
@@ -16,7 +21,7 @@ export default function Sidebar() {
                 <Link to="/profile" className="relative group">
                     {user.profilePic ? (
                         <img
-                            src={`http://localhost:5000${user.profilePic}`}
+                            src={getMediaUrl(user.profilePic)}
                             alt="Profile"
                             className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md group-hover:scale-105 transition-transform"
                         />
