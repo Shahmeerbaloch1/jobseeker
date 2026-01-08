@@ -11,11 +11,18 @@ export default function CreatePost({ onPostCreated }) {
     const [selectedFile, setSelectedFile] = useState(null)
     const [preview, setPreview] = useState(null)
     const [loading, setLoading] = useState(false)
-    const [videoStartTime, setVideoStartTime] = useState(0)
+
 
     const handleFileSelect = (e) => {
         const file = e.target.files[0]
         if (file) {
+            // 10MB limit
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error('File size exceeds 10MB limit')
+                e.target.value = null // Reset input
+                return
+            }
+
             setSelectedFile(file)
             if (file.type.startsWith('image/')) {
                 setPreview(URL.createObjectURL(file))
@@ -43,10 +50,6 @@ export default function CreatePost({ onPostCreated }) {
 
             formData.append('mediaType', mediaType)
             formData.append('media', selectedFile)
-
-            if (mediaType === 'video') {
-                formData.append('videoStartTime', videoStartTime)
-            }
         }
 
         try {
@@ -54,7 +57,7 @@ export default function CreatePost({ onPostCreated }) {
             setContent('')
             setSelectedFile(null)
             setPreview(null)
-            setVideoStartTime(0)
+            setPreview(null)
             if (onPostCreated) onPostCreated(res.data)
             toast.success('Post published!')
         } catch (error) {
@@ -108,34 +111,13 @@ export default function CreatePost({ onPostCreated }) {
                                 )}
                             </div>
                             <button
-                                onClick={() => { setSelectedFile(null); setPreview(null); setVideoStartTime(0) }}
+                                onClick={() => { setSelectedFile(null); setPreview(null) }}
                                 className="absolute -top-2 -right-2 bg-white text-red-500 rounded-full p-1.5 shadow-lg hover:bg-red-50 transition-colors border border-red-100 z-10"
                             >
                                 <X size={14} />
                             </button>
 
-                            {selectedFile.type.startsWith('video/') && (
-                                <div className="mt-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <Clock size={16} className="text-blue-600" />
-                                        <span className="text-xs font-black uppercase text-blue-700 tracking-wider">Clip Start Time (Seconds)</span>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <input
-                                            type="range"
-                                            min="0"
-                                            max="60"
-                                            value={videoStartTime}
-                                            onChange={(e) => setVideoStartTime(e.target.value)}
-                                            className="flex-1 h-1.5 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                                        />
-                                        <span className="bg-white px-3 py-1 rounded-lg border border-blue-100 text-blue-600 font-black text-xs min-w-[50px] text-center">
-                                            {videoStartTime}s
-                                        </span>
-                                    </div>
-                                    <p className="text-[10px] text-blue-500 mt-2 font-bold">The first 10 seconds from this point will be saved.</p>
-                                </div>
-                            )}
+
                         </div>
                     )}
 

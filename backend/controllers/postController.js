@@ -6,20 +6,13 @@ import fs from 'fs'
 
 export const createPost = async (req, res) => {
     try {
-        const { content, mediaType, videoStartTime } = req.body
+        const { content, mediaType } = req.body
         let mediaUrl = ''
 
         if (req.file) {
             const uploadOptions = {
                 resource_type: 'auto', // Detects image, video, or raw (pdf)
                 folder: 'job-social'
-            }
-
-            // Apply 10s trim if it's a video
-            if (mediaType === 'video') {
-                uploadOptions.resource_type = 'video'
-                uploadOptions.start_offset = videoStartTime || 0
-                uploadOptions.duration = 10
             }
 
             const uploadResult = await cloudinary.uploader.upload(req.file.path, uploadOptions)

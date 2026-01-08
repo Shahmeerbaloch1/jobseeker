@@ -13,6 +13,7 @@ import Profile from '../pages/Profile'
 import JobDetails from '../pages/JobDetails'
 import CompanyDashboard from '../pages/CompanyDashboard' // New
 import MyItems from '../pages/MyItems'
+import ScrollToTop from '../components/ScrollToTop'
 
 function ProtectedRoute({ children }) {
     const { user, loading } = useContext(UserContext)
@@ -24,6 +25,7 @@ function ProtectedRoute({ children }) {
 export default function AppRoutes() {
     return (
         <BrowserRouter>
+            <ScrollToTop />
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -35,6 +37,7 @@ export default function AppRoutes() {
                 <Route path="/messaging" element={<ProtectedRoute><Messaging /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/profile/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/company-dashboard" element={<ProtectedRoute><CompanyDashboard /></ProtectedRoute>} />
                 <Route path="/my-items" element={<ProtectedRoute><MyItems /></ProtectedRoute>} />
             </Routes>

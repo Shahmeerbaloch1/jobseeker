@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react'
+import { useState, useContext, useEffect, useRef } from 'react'
 import { UserContext } from '../context/UserContext'
 import { ThumbsUp, MessageCircle, Share2, Send, MoreHorizontal, Trash2, Edit2, Clock } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -17,6 +17,30 @@ export default function PostCard({ post, onDelete }) {
     const [showComments, setShowComments] = useState(false)
     const [commentText, setCommentText] = useState('')
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const videoRef = useRef(null)
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    videoRef.current?.play().catch(() => { }) // Auto-play might be blocked
+                } else {
+                    videoRef.current?.pause()
+                }
+            },
+            { threshold: 0.6 } // Play when 60% visible
+        )
+
+        if (videoRef.current) {
+            observer.observe(videoRef.current)
+        }
+
+        return () => {
+            if (videoRef.current) {
+                observer.unobserve(videoRef.current)
+            }
+        }
+    }, [post])
 
     const isLiked = likes?.includes(user?._id || user?.id)
     const isAuthor = user && (user._id === post.author._id || user.id === post.author._id || user._id === post.author || user.id === post.author)
@@ -78,12 +102,22 @@ export default function PostCard({ post, onDelete }) {
         return url.startsWith('http') ? url : `http://localhost:5000${url}`
     }
 
+    const getVideoThumbnail = (url) => {
+        if (!url) return ''
+        const fullUrl = getMediaUrl(url)
+        // If it's a Cloudinary URL (contains /upload/), replace extension with .jpg
+        if (fullUrl.includes('/upload/')) {
+            return fullUrl.replace(/\.[^/.]+$/, ".jpg")
+        }
+        return fullUrl // Fallback
+    }
+
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden relative group transition-all hover:shadow-md">
             {/* Header */}
             <div className="p-3 sm:p-4 flex gap-2 sm:gap-3 justify-between items-start">
                 <div className="flex gap-2 sm:gap-3">
-                    <Link to="/profile" className="shrink-0">
+                    <Link to={`/profile/${post.author._id || post.author.id}`} className="shrink-0">
                         {post.author.profilePic ? (
                             <img src={getMediaUrl(post.author.profilePic)} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white shadow-sm" />
                         ) : (
@@ -158,10 +192,13 @@ export default function PostCard({ post, onDelete }) {
             {post.mediaUrl && post.mediaType === 'video' && (
                 <div className="bg-black border-y border-gray-100 relative group/video">
                     <video
+                        ref={videoRef}
                         src={getMediaUrl(post.mediaUrl)}
                         controls
+                        muted // Autoplay generally requires muted
+                        playsInline
                         className="w-full object-contain max-h-[500px] sm:max-h-[600px] mx-auto"
-                        poster={getMediaUrl(post.author.profilePic)}
+                        poster={getVideoThumbnail(post.mediaUrl)}
                     />
                 </div>
             )}
