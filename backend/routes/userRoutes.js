@@ -1,5 +1,5 @@
 import express from 'express'
-import { getUserProfile, updateUserProfile, getAllUsers, sendConnectionRequest, acceptConnectionRequest, rejectConnectionRequest } from '../controllers/userController.js'
+import { getUserProfile, updateUserProfile, getAllUsers, sendConnectionRequest, acceptConnectionRequest, rejectConnectionRequest, getProfileViews } from '../controllers/userController.js'
 
 import { upload } from '../middleware/upload.js'
 
@@ -14,5 +14,6 @@ router.put('/:id', upload.fields([
 router.post('/connect', sendConnectionRequest)
 router.post('/connect/accept', acceptConnectionRequest)
 router.post('/connect/reject', rejectConnectionRequest)
+router.get('/:id/views', getProfileViews)
 
 export default router

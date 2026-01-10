@@ -142,3 +142,40 @@ export const updatePost = async (req, res) => {
         res.status(500).json({ message: error.message })
     }
 }
+
+export const sharePost = async (req, res) => {
+    try {
+        const { postId } = req.params
+        const { userId } = req.body
+
+        const post = await Post.findById(postId)
+
+        // Initialize shares array if it doesn't exist (for old posts)
+        if (!post.shares) {
+            post.shares = []
+        }
+
+        if (!post.shares.includes(userId)) {
+            post.shares.push(userId)
+            await post.save()
+
+            // Notify author about the share
+            if (post.author.toString() !== userId) {
+                await Notification.create({
+                    recipient: post.author,
+                    sender: userId,
+                    type: 'share',
+                    relatedId: post._id
+                })
+            }
+        } else {
+            post.shares = post.shares.filter(id => id.toString() !== userId)
+            await post.save()
+        }
+        res.json(post)
+    } catch (error) {
+        console.error('Share post error:', error)
+        res.status(500).json({ message: error.message })
+    }
+}
+

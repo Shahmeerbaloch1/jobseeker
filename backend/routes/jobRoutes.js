@@ -1,5 +1,5 @@
 import express from 'express'
-import { createJob, searchJobs, getJobById, applyForJob, updateApplicationStatus, getUserApplications, getJobApplications, getMyPostedJobs } from '../controllers/jobController.js'
+import { createJob, searchJobs, getJobById, applyForJob, updateApplicationStatus, getUserApplications, getJobApplications, getMyPostedJobs, deleteJob } from '../controllers/jobController.js'
 import { upload } from '../middleware/upload.js'
 import { protect } from '../middleware/authMiddleware.js'
 
@@ -12,6 +12,7 @@ router.get('/:jobId/applications', protect, getJobApplications) // Company: Job 
 router.put('/applications/:id/status', protect, updateApplicationStatus) // Company: Update status
 
 router.post('/', protect, createJob) // Protect job creation
+router.delete('/:id', protect, deleteJob)
 router.get('/', searchJobs)
 router.get('/:id', getJobById)
 

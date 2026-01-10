@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { UserContext } from '../context/UserContext'
 import axios from 'axios'
-import { Search, MapPin, Briefcase, DollarSign, Clock, Plus, X, Building } from 'lucide-react'
+import { Search, MapPin, Briefcase, DollarSign, Clock, Plus, X, Building, Trash2, HelpCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function Jobs() {
@@ -170,6 +170,7 @@ function PostJobForm({ user }) {
         title: '', description: '', company: user.name, location: '',
         requirements: '', skills: '', website: '', salary: '', type: 'Full-time'
     })
+    const [questions, setQuestions] = useState([])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -177,14 +178,30 @@ function PostJobForm({ user }) {
             const payload = {
                 ...formData,
                 author: user._id || user.id,
-                skills: formData.skills.split(',').map(s => s.trim())
+                skills: formData.skills.split(',').map(s => s.trim()),
+                questions
             }
             await axios.post('http://localhost:5000/api/jobs', payload)
             toast.success('Professional Opportunity Posted!')
             setFormData({ title: '', description: '', company: user.name, location: '', requirements: '', skills: '', website: '', salary: '', type: 'Full-time' })
+            setQuestions([])
         } catch (error) {
             toast.error('Failed to post vacancy')
         }
+    }
+
+    const addQuestion = () => {
+        setQuestions([...questions, { text: '', type: 'yes_no' }])
+    }
+
+    const removeQuestion = (index) => {
+        setQuestions(questions.filter((_, i) => i !== index))
+    }
+
+    const updateQuestion = (index, field, value) => {
+        const newQuestions = [...questions]
+        newQuestions[index][field] = value
+        setQuestions(newQuestions)
     }
 
     const inputClasses = "w-full bg-gray-50 border-none px-5 h-12 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-sm font-black placeholder-gray-400"
@@ -231,6 +248,63 @@ function PostJobForm({ user }) {
             <div className="space-y-2">
                 <label className={labelClasses}>Required Stack (Skills)</label>
                 <input placeholder="React, Tailwind, Node.js, GraphQL..." className={inputClasses} value={formData.skills} onChange={e => setFormData({ ...formData, skills: e.target.value })} />
+            </div>
+
+            {/* Screening Questions Section */}
+            <div className="bg-blue-50 rounded-3xl p-6 sm:p-8 border border-blue-100">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="font-black text-blue-900 flex items-center gap-2 text-sm uppercase tracking-widest">
+                        <HelpCircle size={18} />
+                        Screening Questions
+                    </h3>
+                    <button
+                        type="button"
+                        onClick={addQuestion}
+                        className="text-xs bg-white text-blue-600 px-4 py-2 rounded-xl border border-blue-200 font-black uppercase tracking-widest hover:bg-blue-50 transition-colors flex items-center gap-2"
+                    >
+                        <Plus size={14} /> Add Question
+                    </button>
+                </div>
+
+                {questions.length === 0 ? (
+                    <p className="text-blue-400 text-xs font-bold text-center py-4 uppercase tracking-widest bg-white/50 rounded-2xl border border-dashed border-blue-200">No screening questions added.</p>
+                ) : (
+                    <div className="space-y-4">
+                        {questions.map((q, i) => (
+                            <div key={i} className="bg-white p-4 rounded-2xl border border-blue-100 flex gap-4 items-start animate-fade-in shadow-sm">
+                                <span className="bg-blue-100 text-blue-600 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold mt-1">{i + 1}</span>
+                                <div className="flex-1 space-y-3">
+                                    <input
+                                        type="text"
+                                        value={q.text}
+                                        onChange={(e) => updateQuestion(i, 'text', e.target.value)}
+                                        placeholder="Enter question (e.g., Do you have 5+ years of React experience?)"
+                                        className="w-full bg-gray-50 border-none rounded-xl text-sm p-3 focus:ring-2 focus:ring-blue-100 font-bold placeholder-gray-400"
+                                        required
+                                    />
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Answer Type:</span>
+                                        <select
+                                            value={q.type}
+                                            onChange={(e) => updateQuestion(i, 'type', e.target.value)}
+                                            className="text-xs border-gray-100 rounded-lg p-2 bg-gray-50 font-bold text-gray-700 outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer"
+                                        >
+                                            <option value="yes_no">Yes / No</option>
+                                            <option value="number">Numeric</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => removeQuestion(i)}
+                                    className="text-gray-300 hover:text-red-500 p-2 hover:bg-red-50 rounded-xl transition-colors"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="flex justify-end pt-4">

@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { UserContext } from '../context/UserContext'
 import axios from 'axios'
-import { Building, MapPin, Clock, Upload, X } from 'lucide-react'
+import { Building, MapPin, Clock, Upload, X, Trash2, ChevronLeft, ChevronRight, FileText, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function JobDetails() {
@@ -12,24 +12,30 @@ export default function JobDetails() {
     const [job, setJob] = useState(null)
     const [loading, setLoading] = useState(true)
     const [showApplyModal, setShowApplyModal] = useState(false)
+
+    // Application Wizard State
+    const [step, setStep] = useState(1)
     const [resume, setResume] = useState(null)
+    const [applicantDetails, setApplicantDetails] = useState({ name: '', email: '', phone: '' })
     const [coverLetter, setCoverLetter] = useState('')
+    const [answers, setAnswers] = useState({}) // { [questionText]: answer }
 
     useEffect(() => {
         fetchJob()
     }, [id])
 
+    useEffect(() => {
+        if (user) {
+            setApplicantDetails({
+                name: user.name || '',
+                email: user.email || '',
+                phone: user.phone || ''
+            })
+        }
+    }, [user])
+
     const fetchJob = async () => {
         try {
-            // In a real app we'd have a specific getJobById endpoint, filtering from list for now if lazy, 
-            // but let's assume getJobs supports filtering or we add a specific route.
-            // Actually my backend only has getJobs (all). I should've added getJobById.
-            // I'll cheat and fetch all then find, OR I should've implemented getJobById.
-            // Let's assume the basic search API doesn't support ID.
-            // I will implement a quick fetch-all-and-find for now to save backend bandwidth context switching,
-            // or ideally update backend. 
-            // WAIT: User can't wait for backend update. I will just fetch all and find. 
-            // Ideally I should fix backend, but for speed:
             const res = await axios.get('http://localhost:5000/api/jobs')
             const found = res.data.find(j => j._id === id)
             setJob(found)
@@ -40,23 +46,58 @@ export default function JobDetails() {
         }
     }
 
-    const handleApply = async (e) => {
-        e.preventDefault()
-        if (!resume) {
-            toast.error('Please upload a resume')
+    const handleDelete = async () => {
+        if (!window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) return
+        try {
+            await axios.delete(`http://localhost:5000/api/jobs/${id}`)
+            toast.success('Job deleted successfully')
+            navigate('/dashboard')
+        } catch (error) {
+            toast.error('Failed to delete job')
+        }
+    }
+
+    const handleNext = () => {
+        if (step === 1 && !resume) return toast.error('Please upload your resume to proceed')
+        if (step === 2 && (!applicantDetails.name || !applicantDetails.email || !applicantDetails.phone)) return toast.error('Please fill in all contact details')
+
+        // Skip questions step if no questions
+        if (step === 2 && (!job.questions || job.questions.length === 0)) {
+            setStep(4)
             return
         }
 
+        setStep(step + 1)
+    }
+
+    const handlePrev = () => {
+        // Skip questions step going back if no questions
+        if (step === 4 && (!job.questions || job.questions.length === 0)) {
+            setStep(2)
+            return
+        }
+        setStep(step - 1)
+    }
+
+    const handleAnswerChange = (questionText, value) => {
+        setAnswers({ ...answers, [questionText]: value })
+    }
+
+    const handleApply = async () => {
         const formData = new FormData()
         formData.append('applicantId', user._id || user.id)
         formData.append('resume', resume)
         formData.append('coverLetter', coverLetter)
+        formData.append('applicantName', applicantDetails.name)
+        formData.append('applicantEmail', applicantDetails.email)
+        formData.append('applicantPhone', applicantDetails.phone)
 
-        // Extract values from form elements by name
-        const form = e.target
-        formData.append('applicantName', form.applicantName.value)
-        formData.append('applicantEmail', form.applicantEmail.value)
-        formData.append('applicantPhone', form.applicantPhone.value)
+        // Format answers for backend
+        const formattedResponses = Object.entries(answers).map(([q, a]) => ({
+            questionText: q,
+            answer: a
+        }))
+        formData.append('responses', JSON.stringify(formattedResponses))
 
         try {
             await axios.post(`http://localhost:5000/api/jobs/${id}/apply`, formData, {
@@ -64,6 +105,10 @@ export default function JobDetails() {
             })
             toast.success('Application submitted successfully!')
             setShowApplyModal(false)
+            // Reset state
+            setStep(1)
+            setResume(null)
+            setAnswers({})
         } catch (error) {
             toast.error('Failed to apply')
             console.error(error)
@@ -73,112 +118,356 @@ export default function JobDetails() {
     if (loading) return <div className="p-8 text-center">Loading job details...</div>
     if (!job) return <div className="p-8 text-center">Job not found</div>
 
+    const isAuthor = user && job.author && (
+        (user._id && job.author._id && user._id.toString() === job.author._id.toString()) ||
+        (user.id && job.author._id && user.id.toString() === job.author._id.toString()) ||
+        (user._id && job.author === user._id) ||
+        (user.id && job.author === user.id)
+    )
+
+    const userHasApplied = user && job.applicants && (
+        job.applicants.includes(user._id) ||
+        job.applicants.some(app => app === user._id || (typeof app === 'object' && app._id === user._id))
+    )
+
     return (
-        <div className="bg-white rounded-lg shadow min-h-[500px]">
-            <div className="p-8 border-b">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{job.title}</h1>
-                <div className="text-lg text-gray-700 font-medium mb-4">{job.company} · {job.location}</div>
+        <div className="max-w-4xl mx-auto pb-20">
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden relative">
+                <div className="h-32 bg-gradient-to-r from-blue-700 to-indigo-600"></div>
 
-                <div className="flex gap-4 text-sm text-gray-500 mb-6">
-                    <span className="flex items-center gap-1"><Building size={16} /> On-site</span>
-                    <span className="flex items-center gap-1"><Clock size={16} /> Full-time</span>
-                    <span className="flex items-center gap-1 text-green-600 font-bold">12 Applicants</span>
-                </div>
-
-                <button
-                    onClick={() => setShowApplyModal(true)}
-                    className="bg-blue-600 text-white px-8 py-2 rounded-full font-bold text-lg hover:bg-blue-700"
-                >
-                    Easy Apply
-                </button>
-            </div>
-
-            <div className="p-8">
-                <h3 className="text-xl font-bold mb-4">About the job</h3>
-                <p className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-                    {job.description || "No description provided."}
-                </p>
-
-                <h3 className="text-xl font-bold mt-8 mb-4">Requirements</h3>
-                <ul className="list-disc list-inside text-gray-800 space-y-2">
-                    <li>Bachelor's degree in related field or equivalent experience</li>
-                    <li>3+ years of experience in similar role</li>
-                    <li>Strong communication and problem-solving skills</li>
-                </ul>
-            </div>
-
-            {showApplyModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg w-full max-w-lg p-6 relative">
-                        <button onClick={() => setShowApplyModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-black">
-                            <X size={24} />
-                        </button>
-                        <h2 className="text-2xl font-bold mb-6">Apply to {job.company}</h2>
-
-                        <div className="mb-4">
-                            <h3 className="font-semibold mb-2">My Contact Info</h3>
-                            <div className="flex items-center gap-3">
-                                {user.profilePic && <img src={`http://localhost:5000${user.profilePic}`} className="w-10 h-10 rounded-full" />}
-                                <div>
-                                    <div className="font-bold">{user.name}</div>
-                                    <div className="text-sm text-gray-500">{user.email}</div>
-                                </div>
+                <div className="px-8 pb-8">
+                    <div className="flex justify-between items-start -mt-10 mb-6">
+                        <div className="bg-white p-2 rounded-2xl shadow-md">
+                            <div className="w-20 h-20 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-bold text-3xl border border-blue-100">
+                                {job.company[0]}
                             </div>
                         </div>
+                        <div className="flex gap-3 mt-12">
+                            {isAuthor && (
+                                <button
+                                    onClick={handleDelete}
+                                    className="bg-white text-red-600 border border-red-200 px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-red-50 flex items-center gap-2 transition-colors shadow-sm"
+                                >
+                                    <Trash2 size={18} /> Delete Job
+                                </button>
+                            )}
+                            {!isAuthor && (
+                                userHasApplied ? (
+                                    <button
+                                        disabled
+                                        className="bg-green-100 text-green-700 px-8 py-2.5 rounded-xl font-bold text-lg cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        <CheckCircle size={20} /> Applied
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => setShowApplyModal(true)}
+                                        className="bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold text-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95"
+                                    >
+                                        Easy Apply
+                                    </button>
+                                )
+                            )}
+                        </div>
+                    </div>
 
-                        <form onSubmit={handleApply}>
-                            <div className="space-y-4 mb-4">
-                                <div>
-                                    <label className="block font-semibold mb-1">Full Name</label>
-                                    <input required className="w-full border p-2 rounded"
-                                        defaultValue={user.name}
-                                        name="applicantName" />
-                                </div>
-                                <div>
-                                    <label className="block font-semibold mb-1">Email</label>
-                                    <input required type="email" className="w-full border p-2 rounded"
-                                        defaultValue={user.email}
-                                        name="applicantEmail" />
-                                </div>
-                                <div>
-                                    <label className="block font-semibold mb-1">Phone Number</label>
-                                    <input required type="tel" className="w-full border p-2 rounded"
-                                        placeholder="+1 234 567 8900"
-                                        name="applicantPhone" />
-                                </div>
-                            </div>
+                    <h1 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">{job.title}</h1>
+                    <div className="text-lg text-gray-600 font-medium mb-6 flex items-center gap-2">
+                        {job.company}
+                        <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                        <span className="text-gray-500">{job.location}</span>
+                    </div>
 
-                            <div className="mb-4">
-                                <label className="block font-semibold mb-2">Resume (PDF)</label>
-                                <div className="border border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 cursor-pointer relative">
-                                    <input
-                                        type="file"
-                                        accept=".pdf"
-                                        onChange={(e) => setResume(e.target.files[0])}
-                                        className="absolute inset-0 opacity-0 cursor-pointer"
-                                        required
-                                    />
-                                    <Upload className="mx-auto text-gray-400 mb-2" />
-                                    <span className="text-blue-600 font-medium">Upload resume</span>
-                                    {resume && <div className="mt-2 text-sm text-gray-700 font-bold">{resume.name}</div>}
+                    <div className="flex flex-wrap gap-4 mb-8">
+                        <span className="flex items-center gap-1.5 bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-bold border border-gray-200">
+                            <Building size={16} className="text-blue-500" /> {job.type}
+                        </span>
+                        <span className="flex items-center gap-1.5 bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-bold border border-gray-200">
+                            <MapPin size={16} className="text-green-500" /> {job.location}
+                        </span>
+                        {job.salary && (
+                            <span className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1.5 rounded-lg text-sm font-bold border border-green-200">
+                                💰 {job.salary}
+                            </span>
+                        )}
+                        <span className="flex items-center gap-1.5 bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-bold border border-gray-200">
+                            <Clock size={16} className="text-purple-500" /> Posted Recently
+                        </span>
+                        <span className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-bold border border-blue-100">
+                            12 Applicants
+                        </span>
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-8">
+                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                            About the role
+                        </h3>
+                        <div className="prose prose-blue max-w-none text-gray-600 leading-relaxed whitespace-pre-wrap mb-8">
+                            {job.description || "No description provided."}
+                        </div>
+
+                        {job.requirements && (
+                            <>
+                                <h3 className="text-xl font-bold mb-4">Requirements</h3>
+                                <div className="prose prose-blue max-w-none text-gray-600 leading-relaxed whitespace-pre-wrap mb-8">
+                                    {job.requirements}
                                 </div>
-                            </div>
+                            </>
+                        )}
 
-                            <div className="mb-6">
-                                <label className="block font-semibold mb-2">Cover Letter (Optional)</label>
-                                <textarea
-                                    className="w-full border rounded p-2"
-                                    rows={4}
-                                    value={coverLetter}
-                                    onChange={(e) => setCoverLetter(e.target.value)}
-                                ></textarea>
-                            </div>
+                        {job.skills && job.skills.length > 0 && (
+                            <>
+                                <h3 className="text-xl font-bold mb-4">Skills Required</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {(Array.isArray(job.skills) ? job.skills : job.skills.split(',')).map((skill, index) => (
+                                        <span key={index} className="bg-blue-50 text-blue-700 px-4 py-2 rounded-full font-bold text-sm border border-blue-100">
+                                            {typeof skill === 'string' ? skill.trim() : skill}
+                                        </span>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
 
-                            <div className="flex justify-end gap-3">
-                                <button type="button" onClick={() => setShowApplyModal(false)} className="px-4 py-2 font-semibold hover:bg-gray-100 rounded-full">Cancel</button>
-                                <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700">Submit Application</button>
+            {/* Application Modal Wizard */}
+            {showApplyModal && (
+                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in">
+                    <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl animate-scale-up overflow-hidden">
+                        {/* Header */}
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div>
+                                <h2 className="text-xl font-black text-gray-900">Apply to {job.company}</h2>
+                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mt-1">
+                                    Step {step} of {(job.questions && job.questions.length > 0) ? 4 : 3}:
+                                    {step === 1 && ' Upload Resume'}
+                                    {step === 2 && ' Contact Details'}
+                                    {step === 3 && ' Screening Questions'}
+                                    {step === 4 && ' Review Application'}
+                                </p>
                             </div>
-                        </form>
+                            <button onClick={() => setShowApplyModal(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                                <X size={20} className="text-gray-500" />
+                            </button>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="h-1 bg-gray-100 w-full mb-0">
+                            <div
+                                className="h-full bg-blue-600 transition-all duration-300"
+                                style={{ width: `${(step / ((job.questions && job.questions.length > 0) ? 4 : 3)) * 100}%` }}
+                            ></div>
+                        </div>
+
+                        {/* Body */}
+                        <div className="flex-1 overflow-y-auto p-6 sm:p-8">
+                            {step === 1 && (
+                                <div className="space-y-6">
+                                    <div className="text-center mb-8">
+                                        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
+                                            <FileText size={32} />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-gray-900">Upload your Resume</h3>
+                                        <p className="text-gray-500 mt-2">Please upload your CV in PDF format to continue.</p>
+                                    </div>
+
+                                    <div className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all ${resume ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-blue-400 hover:bg-blue-50'} cursor-pointer relative group`}>
+                                        <input
+                                            type="file"
+                                            accept=".pdf"
+                                            onChange={(e) => setResume(e.target.files[0])}
+                                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                        />
+                                        {resume ? (
+                                            <div>
+                                                <CheckCircle size={40} className="mx-auto text-green-500 mb-2" />
+                                                <p className="font-bold text-gray-900">{resume.name}</p>
+                                                <p className="text-xs text-green-600 font-bold mt-1">Ready to upload</p>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <Upload size={32} className="mx-auto text-gray-400 mb-3 group-hover:text-blue-500 transition-colors" />
+                                                <p className="font-bold text-gray-700 group-hover:text-blue-700">Click to upload or drag and drop</p>
+                                                <p className="text-xs text-gray-400 mt-2">PDF only (Max 5MB)</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 2 && (
+                                <div className="space-y-6">
+                                    <h3 className="text-xl font-bold text-gray-900 mb-4">Contact Information</h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
+                                            <input
+                                                value={applicantDetails.name}
+                                                onChange={e => setApplicantDetails(prev => ({ ...prev, name: e.target.value }))}
+                                                className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                                                placeholder="John Doe"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Email Address</label>
+                                            <input
+                                                type="email"
+                                                value={applicantDetails.email}
+                                                onChange={e => setApplicantDetails(prev => ({ ...prev, email: e.target.value }))}
+                                                className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                                                placeholder="john@example.com"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Phone Number</label>
+                                            <input
+                                                type="tel"
+                                                value={applicantDetails.phone}
+                                                onChange={e => setApplicantDetails(prev => ({ ...prev, phone: e.target.value }))}
+                                                className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                                                placeholder="+1 (555) 000-0000"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Cover Letter (Optional)</label>
+                                            <textarea
+                                                value={coverLetter}
+                                                onChange={e => setCoverLetter(e.target.value)}
+                                                className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium min-h-[100px]"
+                                                placeholder="Tell us why you're a fit..."
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 3 && (
+                                <div className="space-y-6">
+                                    <h3 className="text-xl font-bold text-gray-900">Screening Questions</h3>
+                                    <p className="text-gray-500 text-sm mb-6">Please answer the following questions from the employer.</p>
+
+                                    <div className="space-y-6">
+                                        {job.questions.map((q, i) => (
+                                            <div key={i} className="bg-gray-50 p-4 rounded-xl border border-gray-100 transition-shadow hover:shadow-md hover:border-blue-200">
+                                                <label className="block font-bold text-gray-800 mb-3">{q.text}</label>
+                                                {q.type === 'yes_no' ? (
+                                                    <div className="flex gap-4">
+                                                        <label className="flex items-center gap-2 cursor-pointer bg-white px-4 py-2 rounded-lg border border-gray-200 hover:border-blue-400 font-medium">
+                                                            <input
+                                                                type="radio"
+                                                                name={`q-${i}`}
+                                                                value="Yes"
+                                                                checked={answers[q.text] === 'Yes'}
+                                                                onChange={() => handleAnswerChange(q.text, 'Yes')}
+                                                                className="text-blue-600 focus:ring-blue-500"
+                                                            /> Yes
+                                                        </label>
+                                                        <label className="flex items-center gap-2 cursor-pointer bg-white px-4 py-2 rounded-lg border border-gray-200 hover:border-blue-400 font-medium">
+                                                            <input
+                                                                type="radio"
+                                                                name={`q-${i}`}
+                                                                value="No"
+                                                                checked={answers[q.text] === 'No'}
+                                                                onChange={() => handleAnswerChange(q.text, 'No')}
+                                                                className="text-blue-600 focus:ring-blue-500"
+                                                            /> No
+                                                        </label>
+                                                    </div>
+                                                ) : (
+                                                    <input
+                                                        type="number"
+                                                        value={answers[q.text] || ''}
+                                                        onChange={(e) => handleAnswerChange(q.text, e.target.value)}
+                                                        className="w-full max-w-xs bg-white border border-gray-200 p-2.5 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                                                        placeholder="Enter number..."
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 4 && (
+                                <div className="space-y-6">
+                                    <h3 className="text-xl font-bold text-gray-900 mb-6">Review your Application</h3>
+
+                                    <div className="space-y-6">
+                                        {/* Resume Preview */}
+                                        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                                            <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
+                                                <FileText size={18} /> Resume Preview
+                                            </h4>
+                                            {resume && (
+                                                <div className="aspect-[4/5] w-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 relative group">
+                                                    <iframe
+                                                        src={URL.createObjectURL(resume)}
+                                                        className="w-full h-full"
+                                                        title="Resume Preview"
+                                                    />
+                                                    {/* Overlay to prevent interaction if needed, or simple direct display */}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Details Review */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                                                <h4 className="font-bold text-gray-700 mb-2">Contact Info</h4>
+                                                <p className="text-sm font-medium">{applicantDetails.name}</p>
+                                                <p className="text-sm text-gray-500">{applicantDetails.email}</p>
+                                                <p className="text-sm text-gray-500">{applicantDetails.phone}</p>
+                                            </div>
+
+                                            {(job.questions && job.questions.length > 0) && (
+                                                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                                                    <h4 className="font-bold text-gray-700 mb-2">Screening Answers</h4>
+                                                    <div className="space-y-2">
+                                                        {Object.entries(answers).map(([q, a], i) => (
+                                                            <div key={i}>
+                                                                <p className="text-xs text-gray-500 font-semibold">{q}</p>
+                                                                <p className="text-sm font-bold text-blue-600">{a}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer Buttons */}
+                        <div className="p-6 border-t border-gray-100 flex justify-between bg-gray-50/50">
+                            {step > 1 ? (
+                                <button
+                                    onClick={handlePrev}
+                                    className="px-6 py-2.5 rounded-xl font-bold text-gray-600 hover:bg-gray-100 border border-transparent hover:border-gray-200 transition-all flex items-center gap-2"
+                                >
+                                    <ChevronLeft size={18} /> Back
+                                </button>
+                            ) : (
+                                <div></div> // Spacer
+                            )}
+
+                            {step < 4 ? (
+                                <button
+                                    onClick={handleNext}
+                                    className="px-8 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all flex items-center gap-2 active:scale-95"
+                                >
+                                    Next Step <ChevronRight size={18} />
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleApply}
+                                    className="px-8 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-100 transition-all flex items-center gap-2 active:scale-95"
+                                >
+                                    Submit Application <CheckCircle size={18} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

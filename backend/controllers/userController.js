@@ -8,6 +8,28 @@ export const getUserProfile = async (req, res) => {
     try {
         const user = await User.findById(req.params.id)
             .populate('connections', 'name profilePic headline')
+
+        // Record profile view
+        // Check if query parameter or header has the viewer ID (since middleware might not be fully used on this public route, or we can trust the client to send it if logged in)
+        // Ideally, we use req.user.id from middleware if protected.
+        // Let's assume the client sends ?viewerId=<id> purely for this feature if not fully protected, or we check req.header.
+        // Actually, Profile page is likely protected or we have the user context.
+        // Let's check req.user from middleware if available, or query param as fallback.
+        const viewerId = req.user?.id || req.query.viewerId
+
+        if (viewerId && viewerId !== req.params.id) {
+            // Check if already viewed recently? For now, just simple push.
+            // Using addToSet or check manually to avoid spam? 
+            // User requested "count first time", so let's check if already viewed.
+            // "agar koi mere profile view first time tho wo count ho" -> implies unique views.
+
+            const alreadyViewed = user.profileViews.some(view => view.viewer.toString() === viewerId)
+            if (!alreadyViewed) {
+                user.profileViews.push({ viewer: viewerId })
+                await user.save()
+            }
+        }
+
         res.json(user)
     } catch (error) {
         res.status(500).json({ message: error.message })
@@ -146,6 +168,23 @@ export const rejectConnectionRequest = async (req, res) => {
         if (!connection) return res.status(404).json({ message: 'Connection not found' })
 
         res.json({ message: 'Connection request ignored' })
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
+export const getProfileViews = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).populate('profileViews.viewer', 'name profilePic headline')
+        if (!user) return res.status(404).json({ message: 'User not found' })
+
+        // Return the list of views, flattened
+        const views = user.profileViews.map(view => ({
+            ...view.viewer.toObject(),
+            viewedAt: view.viewedAt
+        }))
+
+        res.json(views)
     } catch (error) {
         res.status(500).json({ message: error.message })
     }

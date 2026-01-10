@@ -31,7 +31,8 @@ export default function Profile() {
 
     const fetchUserProfile = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/users/${id}`)
+            const viewerParam = user ? `?viewerId=${user._id || user.id}` : ''
+            const res = await axios.get(`http://localhost:5000/api/users/${id}${viewerParam}`)
             setProfileUser(res.data)
         } catch (error) {
             toast.error('Failed to load profile')

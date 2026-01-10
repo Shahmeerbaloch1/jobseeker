@@ -9,7 +9,11 @@ const userSchema = new mongoose.Schema({
     headline: { type: String, default: '' },
     bio: { type: String, default: '' },
     skills: [String],
-    connections: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    connections: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    profileViews: [{
+        viewer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        viewedAt: { type: Date, default: Date.now }
+    }]
 })
 
 export default mongoose.model('User', userSchema)

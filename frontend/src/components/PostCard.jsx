@@ -14,9 +14,11 @@ export default function PostCard({ post, onDelete }) {
     const [editContent, setEditContent] = useState(post.content)
     const [likes, setLikes] = useState(post.likes || [])
     const [comments, setComments] = useState(post.comments || [])
+    const [shares, setShares] = useState(post.shares || [])
     const [showComments, setShowComments] = useState(false)
     const [commentText, setCommentText] = useState('')
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [showShareModal, setShowShareModal] = useState(false)
     const videoRef = useRef(null)
 
     useEffect(() => {
@@ -94,6 +96,26 @@ export default function PostCard({ post, onDelete }) {
             setCommentText('')
         } catch (error) {
             console.error(error)
+        }
+    }
+
+    const handleShare = async () => {
+        try {
+            await axios.put(`http://localhost:5000/api/posts/${post._id}/share`, { userId: user._id || user.id })
+            if (shares?.includes(user?._id || user?.id)) {
+                setShares(shares.filter(id => id !== (user._id || user.id)))
+            } else {
+                setShares([...shares, user._id || user.id])
+            }
+            setShowShareModal(true)
+            // Copy link to clipboard
+            const postLink = `${window.location.origin}/posts/${post._id}`
+            navigator.clipboard.writeText(postLink)
+            toast.success('Link copied to clipboard!')
+            setTimeout(() => setShowShareModal(false), 2000)
+        } catch (error) {
+            console.error(error)
+            toast.error('Failed to share post')
         }
     }
 
@@ -216,17 +238,26 @@ export default function PostCard({ post, onDelete }) {
             )}
 
             {/* Stats */}
-            {(likes.length > 0 || comments.length > 0) && (
+            {(likes.length > 0 || comments.length > 0 || shares.length > 0) && (
                 <div className="px-4 sm:px-5 py-2.5 sm:py-3 text-[10px] sm:text-xs font-bold text-gray-500 flex justify-between items-center border-t border-gray-50">
-                    <div className="flex items-center gap-1.5">
-                        <div className="flex -space-x-1.5">
-                            <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-600 rounded-full border border-white flex items-center justify-center">
-                                <ThumbsUp size={8} className="sm:w-2.5 sm:h-2.5 text-white fill-white" />
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        {likes.length > 0 && (
+                            <div className="flex items-center gap-1.5">
+                                <div className="flex -space-x-1.5">
+                                    <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-600 rounded-full border border-white flex items-center justify-center">
+                                        <ThumbsUp size={8} className="sm:w-2.5 sm:h-2.5 text-white fill-white" />
+                                    </div>
+                                </div>
+                                <span>{likes.length}</span>
                             </div>
-                        </div>
-                        <span>{likes.length} Likes</span>
+                        )}
+                        {shares.length > 0 && (
+                            <span>{shares.length} {shares.length === 1 ? 'Share' : 'Shares'}</span>
+                        )}
                     </div>
-                    <button onClick={() => setShowComments(!showComments)} className="hover:text-blue-600 hover:underline transition-colors">{comments.length} Comments</button>
+                    {comments.length > 0 && (
+                        <button onClick={() => setShowComments(!showComments)} className="hover:text-blue-600 hover:underline transition-colors">{comments.length} {comments.length === 1 ? 'Comment' : 'Comments'}</button>
+                    )}
                 </div>
             )}
 
@@ -246,7 +277,7 @@ export default function PostCard({ post, onDelete }) {
                     <MessageCircle size={18} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
                     <span className="text-[11px] sm:text-sm font-black uppercase tracking-wider hidden xs:inline">Comment</span>
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 rounded-xl transition-all active:scale-95 hover:bg-white hover:shadow-sm text-gray-500">
+                <button onClick={handleShare} className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 rounded-xl transition-all active:scale-95 hover:bg-white hover:shadow-sm text-gray-500">
                     <Share2 size={18} className="sm:w-5 sm:h-5" strokeWidth={2.5} />
                     <span className="text-[11px] sm:text-sm font-black uppercase tracking-wider hidden xs:inline">Share</span>
                 </button>

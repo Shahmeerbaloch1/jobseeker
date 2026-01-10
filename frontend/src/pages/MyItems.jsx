@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from 'react'
 import axios from 'axios'
 import { UserContext } from '../context/UserContext'
-import { Briefcase, Calendar, Clock, ChevronRight, Bookmark, Users, ExternalLink, MessageSquare, Check, X, Ban, FileText, MapPin } from 'lucide-react'
+import { Briefcase, Calendar, Clock, ChevronRight, Bookmark, Users, ExternalLink, MessageSquare, Check, X, Ban, FileText, MapPin, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
@@ -53,6 +53,33 @@ export default function MyItems() {
         }
     }
 
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [jobToDelete, setJobToDelete] = useState(null)
+
+    const initiateDelete = (jobId) => {
+        setJobToDelete(jobId)
+        setShowDeleteModal(true)
+    }
+
+    const confirmDeleteJob = async () => {
+        if (!jobToDelete) return
+        try {
+            await axios.delete(`http://localhost:5000/api/jobs/${jobToDelete}`)
+            setData(data.filter(job => job._id !== jobToDelete))
+            if (selectedJob?._id === jobToDelete) {
+                setSelectedJob(null)
+                setApplicants([])
+            }
+            toast.success('Job deleted successfully')
+        } catch (error) {
+            toast.error('Failed to delete job')
+        } finally {
+            setShowDeleteModal(false)
+            setJobToDelete(null)
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
@@ -65,7 +92,7 @@ export default function MyItems() {
     // --- COMPANY VIEW ---
     if (user.role === 'company') {
         return (
-            <div className="w-full animate-fade-in pb-20 px-0 sm:px-1">
+            <div className="w-full animate-fade-in pb-20 px-0 sm:px-1 relative">
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-10">
                     {/* Left: Jobs List */}
                     <aside className="xl:col-span-4 space-y-4 sm:space-y-8">
@@ -83,20 +110,28 @@ export default function MyItems() {
                                     </div>
                                 ) : (
                                     data.map(job => (
-                                        <button
-                                            key={job._id}
-                                            onClick={() => { setSelectedJob(job); fetchApplicants(job._id); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                                            className={`w-full text-left p-4 sm:p-6 rounded-[1.25rem] sm:rounded-[1.75rem] transition-all duration-300 group ${selectedJob?._id === job._id ? 'bg-slate-900 text-white shadow-2xl translate-x-1' : 'bg-slate-50/50 hover:bg-white border border-transparent hover:border-slate-100 hover:translate-x-1'}`}
-                                        >
-                                            <h3 className={`font-black tracking-tight leading-tight mb-2 sm:mb-3 text-sm sm:text-base ${selectedJob?._id === job._id ? 'text-white' : 'text-slate-900'}`}>{job.title}</h3>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2 sm:gap-3">
-                                                    <MapPin size={10} className={selectedJob?._id === job._id ? 'text-blue-400' : 'text-slate-400'} />
-                                                    <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${selectedJob?._id === job._id ? 'text-slate-400' : 'text-slate-500'}`}>{job.location}</span>
+                                        <div key={job._id} className="relative group/item">
+                                            <button
+                                                onClick={() => { setSelectedJob(job); fetchApplicants(job._id); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                                                className={`w-full text-left p-4 sm:p-6 rounded-[1.25rem] sm:rounded-[1.75rem] transition-all duration-300 group ${selectedJob?._id === job._id ? 'bg-slate-900 text-white shadow-2xl translate-x-1' : 'bg-slate-50/50 hover:bg-white border border-transparent hover:border-slate-100 hover:translate-x-1'}`}
+                                            >
+                                                <h3 className={`font-black tracking-tight leading-tight mb-2 sm:mb-3 text-sm sm:text-base pr-8 ${selectedJob?._id === job._id ? 'text-white' : 'text-slate-900'}`}>{job.title}</h3>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2 sm:gap-3">
+                                                        <MapPin size={10} className={selectedJob?._id === job._id ? 'text-blue-400' : 'text-slate-400'} />
+                                                        <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${selectedJob?._id === job._id ? 'text-slate-400' : 'text-slate-500'}`}>{job.location}</span>
+                                                    </div>
+                                                    <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-tighter bg-white/10 px-1.5 py-0.5 rounded ${selectedJob?._id === job._id ? 'inline-block' : 'hidden'}`}>Active</span>
                                                 </div>
-                                                <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-tighter bg-white/10 px-1.5 py-0.5 rounded ${selectedJob?._id === job._id ? 'inline-block' : 'hidden'}`}>Active</span>
-                                            </div>
-                                        </button>
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); initiateDelete(job._id) }}
+                                                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover/item:opacity-100"
+                                                title="Delete Job"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     ))
                                 )}
                             </div>
@@ -156,7 +191,7 @@ export default function MyItems() {
                                                             <div className="flex gap-4 sm:gap-8 items-start">
                                                                 <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-[1.75rem] overflow-hidden shrink-0 shadow-2xl shadow-slate-200 border-2 border-white ring-1 ring-slate-100 group-hover/app:scale-105 transition-transform duration-500">
                                                                     {app.applicant?.profilePic ? (
-                                                                        <img src={`http://localhost:5000${app.applicant.profilePic}`} className="w-full h-full object-cover" />
+                                                                        <img src={app.applicant?.profilePic.startsWith('http') ? app.applicant?.profilePic : `http://localhost:5000${app.applicant?.profilePic}`} className="w-full h-full object-cover" />
                                                                     ) : (
                                                                         <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white font-black text-xl sm:text-3xl">{app.applicant?.name?.[0]}</div>
                                                                     )}
@@ -232,6 +267,38 @@ export default function MyItems() {
                         )}
                     </main>
                 </div>
+
+                {/* Custom Delete Modal */}
+                {showDeleteModal && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowDeleteModal(false)}>
+                        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-scale-up border border-gray-100" onClick={e => e.stopPropagation()}>
+                            <div className="p-8 text-center bg-white">
+                                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500 animate-pulse">
+                                    <Trash2 size={32} />
+                                </div>
+                                <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Delete Opportunity?</h3>
+                                <p className="text-slate-500 font-medium text-sm leading-relaxed">
+                                    This action cannot be undone. The job listing and all associated applications will be permanently removed.
+                                </p>
+                            </div>
+                            <div className="flex border-t border-slate-100">
+                                <button
+                                    onClick={() => setShowDeleteModal(false)}
+                                    className="flex-1 py-4 text-slate-600 font-bold hover:bg-slate-50 transition-colors text-sm uppercase tracking-widest"
+                                >
+                                    Cancel
+                                </button>
+                                <div className="w-px bg-slate-100"></div>
+                                <button
+                                    onClick={confirmDeleteJob}
+                                    className="flex-1 py-4 text-red-600 font-black hover:bg-red-50 transition-colors text-sm uppercase tracking-widest"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         )
     }

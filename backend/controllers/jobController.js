@@ -16,6 +16,31 @@ export const createJob = async (req, res) => {
     }
 }
 
+export const deleteJob = async (req, res) => {
+    try {
+        const { id } = req.params
+        const job = await Job.findById(id)
+
+        if (!job) return res.status(404).json({ message: 'Job not found' })
+
+        // Check if user is the author
+        // Assuming req.user is populated by protect middleware
+        if (job.author.toString() !== req.user.id) {
+            return res.status(401).json({ message: 'Not authorized' })
+        }
+
+        await Job.findByIdAndDelete(id)
+        // Optionally delete associated applications? For now we keep them or let them be orphaned/handled by hooks.
+        // Let's also remove the job from connections or User posted jobs if configured there.
+        // Typically we should also delete applications.
+        await Application.deleteMany({ job: id })
+
+        res.json({ message: 'Job removed' })
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
 export const getJobs = async (req, res) => {
     try {
         const { search, location, type } = req.query
@@ -34,11 +59,22 @@ export const getJobs = async (req, res) => {
 export const applyForJob = async (req, res) => {
     try {
         const { jobId } = req.params
-        const { applicantId, coverLetter, applicantName, applicantEmail, applicantPhone } = req.body
+        const { applicantId, coverLetter, applicantName, applicantEmail, applicantPhone, responses } = req.body
 
         let resumeUrl = ''
         if (req.file) {
             resumeUrl = `/uploads/${req.file.filename}`
+        }
+
+        // Parse responses if sent as JSON string (multi-part form data usually sends objects as strings)
+        // Or if simple JSON body. Since we use 'upload.single', it's multipart/form-data.
+        let parsedResponses = []
+        if (responses) {
+            try {
+                parsedResponses = typeof responses === 'string' ? JSON.parse(responses) : responses
+            } catch (e) {
+                parsedResponses = []
+            }
         }
 
         const application = await Application.create({
@@ -48,7 +84,8 @@ export const applyForJob = async (req, res) => {
             applicantEmail,
             applicantPhone,
             resumeUrl,
-            coverLetter
+            coverLetter,
+            responses: parsedResponses
         })
 
         // Notify Job Author

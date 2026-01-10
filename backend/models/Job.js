@@ -11,5 +11,9 @@ export default mongoose.model('Job', new mongoose.Schema({
     website: { type: String },
     salary: { type: String }, // e.g. "$100k - $120k"
     type: { type: String, enum: ['Full-time', 'Part-time', 'Contract', 'Internship', 'Remote'], default: 'Full-time' },
-    applicants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    applicants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    questions: [{
+        text: { type: String, required: true },
+        type: { type: String, enum: ['yes_no', 'number'], required: true }
+    }]
 }, { timestamps: true }))

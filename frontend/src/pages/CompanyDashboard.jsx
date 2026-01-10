@@ -108,7 +108,7 @@ export default function CompanyDashboard() {
                                     <div className="flex gap-3">
                                         {app.applicant.profilePic ? (
                                             <img
-                                                src={`http://localhost:5000${app.applicant.profilePic}`}
+                                                src={app.applicant.profilePic.startsWith('http') ? app.applicant.profilePic : `http://localhost:5000${app.applicant.profilePic}`}
                                                 className="w-12 h-12 rounded-full object-cover"
                                                 alt={app.applicant.name}
                                             />
@@ -142,6 +142,20 @@ export default function CompanyDashboard() {
                                 {app.coverLetter && (
                                     <div className="bg-gray-50 p-3 rounded mb-3">
                                         <p className="text-sm text-gray-700">{app.coverLetter}</p>
+                                    </div>
+                                )}
+
+                                {app.responses && app.responses.length > 0 && (
+                                    <div className="bg-blue-50 p-3 rounded mb-3 border border-blue-100">
+                                        <h5 className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-2">Screening Responses</h5>
+                                        <div className="space-y-2">
+                                            {app.responses.map((resp, idx) => (
+                                                <div key={idx} className="flex flex-col sm:flex-row sm:justify-between sm:gap-4 text-sm border-b border-blue-100 last:border-0 pb-1 last:pb-0">
+                                                    <span className="text-gray-600 font-medium">{resp.questionText}</span>
+                                                    <span className="text-blue-700 font-bold">{resp.answer}</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
 

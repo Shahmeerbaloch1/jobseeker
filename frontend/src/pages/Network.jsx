@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { UserContext } from '../context/UserContext'
 import axios from 'axios'
 import { UserPlus, Check, Clock, UserCheck, ArrowLeft } from 'lucide-react'
@@ -125,21 +125,23 @@ export default function Network() {
                             <div className="h-28 bg-[#f3f6f9] relative overflow-hidden shrink-0">
                                 <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 via-transparent to-white group-hover/card:scale-110 transition-transform duration-1000"></div>
                                 <div className="absolute -bottom-10 inset-x-0 flex justify-center">
-                                    <div className="relative">
+                                    <Link to={`/profile/${u._id}`} className="relative block">
                                         {u.profilePic ? (
-                                            <img src={`http://localhost:5000${u.profilePic}`} className="w-24 h-24 rounded-2xl object-cover border-8 border-white shadow-xl group-hover/card:scale-105 transition-transform duration-500" />
+                                            <img src={u.profilePic.startsWith('http') ? u.profilePic : `http://localhost:5000${u.profilePic}`} className="w-24 h-24 rounded-2xl object-cover border-8 border-white shadow-xl group-hover/card:scale-105 transition-transform duration-500" />
                                         ) : (
                                             <div className="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl flex items-center justify-center text-3xl font-black text-white border-8 border-white shadow-xl group-hover/card:scale-105 transition-transform duration-500">
                                                 {u.name[0]}
                                             </div>
                                         )}
                                         <div className="absolute right-1 bottom-1 w-5 h-5 bg-green-500 border-4 border-white rounded-full"></div>
-                                    </div>
+                                    </Link>
                                 </div>
                             </div>
 
                             <div className="p-6 pt-14 flex-1 flex flex-col items-center text-center">
-                                <h3 className="font-black text-slate-900 text-lg sm:text-[22px] tracking-tight mb-2 group-hover/card:text-blue-600 transition-colors truncate w-full px-2">{u.name}</h3>
+                                <Link to={`/profile/${u._id}`} className="block w-full">
+                                    <h3 className="font-black text-slate-900 text-lg sm:text-[22px] tracking-tight mb-2 group-hover/card:text-blue-600 transition-colors truncate w-full px-2">{u.name}</h3>
+                                </Link>
                                 <p className="text-slate-500 text-[11px] sm:text-[12px] font-black uppercase tracking-[0.1em] mb-6 h-10 overflow-hidden line-clamp-2 leading-relaxed px-2">
                                     {u.headline ? u.headline.toUpperCase() : 'IMPACTFUL PROFESSIONAL'}
                                 </p>
@@ -159,7 +161,7 @@ export default function Network() {
                     ))
                 )}
             </div>
-        </div>
+        </div >
     )
 }
 
