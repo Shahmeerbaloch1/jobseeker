@@ -3,6 +3,7 @@ import Notification from '../models/Notification.js'
 import cloudinary from '../config/cloudinary.js'
 import fs from 'fs'
 import User from '../models/User.js'
+import mongoose from 'mongoose'
 
 export const sendMessage = async (req, res) => {
     try {
@@ -90,56 +91,81 @@ export const getMessages = async (req, res) => {
 export const getConversations = async (req, res) => {
     try {
         const { userId } = req.params
+        const userObjectId = new mongoose.Types.ObjectId(userId)
 
-        // Find all unique interaction partners
+        // Aggregation to find conversations, latest message, and unread count
         const conversations = await Message.aggregate([
             {
                 $match: {
-                    $or: [{ sender: userId }, { recipient: userId }] // Note: String vs ObjectId matching depends on how they are stored. Mongoose usually casts, but aggregation doesn't.
-                    // Ideally we cast input userId to ObjectId if Schema uses ObjectId.
-                    // For now, let's assume standard behavior or fix input.
+                    $or: [
+                        { sender: userObjectId },
+                        { recipient: userObjectId }
+                    ]
                 }
             },
             {
-                $sort: { createdAt: -1 } // Newest first
+                $sort: { createdAt: -1 }
             },
             {
                 $group: {
                     _id: {
-                        $cond: [
-                            { $eq: ["$sender", { $toObjectId: userId }] },
-                            "$recipient",
-                            "$sender"
-                        ]
+                        $cond: {
+                            if: { $eq: ['$sender', userObjectId] },
+                            then: '$recipient',
+                            else: '$sender'
+                        }
                     },
-                    lastMessage: { $first: "$$ROOT" }
+                    latestMessage: { $first: '$$ROOT' },
+                    unreadCount: {
+                        $sum: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $eq: ['$recipient', userObjectId] },
+                                        { $eq: ['$read', false] }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    }
                 }
             },
             {
-                $sort: { "lastMessage.createdAt": -1 } // Sort conversations by latest message
+                $lookup: {
+                    from: 'users',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'partnerDetails'
+                }
+            },
+            {
+                $unwind: '$partnerDetails'
+            },
+            {
+                $project: {
+                    _id: '$partnerDetails._id',
+                    name: '$partnerDetails.name',
+                    profilePic: '$partnerDetails.profilePic',
+                    headline: '$partnerDetails.headline',
+                    latestMessage: {
+                        content: '$latestMessage.content',
+                        createdAt: '$latestMessage.createdAt',
+                        isOwn: { $eq: ['$latestMessage.sender', userObjectId] },
+                        read: '$latestMessage.read'
+                    },
+                    unreadCount: 1
+                }
+            },
+            {
+                $sort: { 'latestMessage.createdAt': -1 }
             }
         ])
 
-        // Populate user details for each conversation
-        const populatedConversations = await User.populate(conversations, {
-            path: "_id",
-            select: "name profilePic headline"
-        })
-
-        // Format result to match frontend expectation (clean user object + last message info)
-        const result = populatedConversations.map(c => {
-            const partner = c._id
-            // If partner is null (deleted user?), skip or handle
-            if (!partner) return null
-            return {
-                ...partner.toObject(),
-                lastMessage: c.lastMessage
-            }
-        }).filter(Boolean)
-
-        res.json(result)
+        res.json(conversations)
     } catch (error) {
-        console.error("Get Conversations Error:", error)
+        console.error('Get Conversations Error:', error)
         res.status(500).json({ message: error.message })
     }
 }

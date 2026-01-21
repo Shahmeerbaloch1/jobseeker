@@ -13,7 +13,10 @@ const userSchema = new mongoose.Schema({
     profileViews: [{
         viewer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         viewedAt: { type: Date, default: Date.now }
-    }]
+    }],
+    verificationCode: String,
+    verificationCodeExpires: Date,
+    isVerified: { type: Boolean, default: false }
 })
 
 export default mongoose.model('User', userSchema)

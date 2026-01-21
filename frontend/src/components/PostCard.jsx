@@ -1,6 +1,6 @@
 import { useState, useContext, useEffect, useRef } from 'react'
 import { UserContext } from '../context/UserContext'
-import { ThumbsUp, MessageCircle, Share2, Send, MoreHorizontal, Trash2, Edit2, Clock } from 'lucide-react'
+import { ThumbsUp, MessageCircle, Share2, Send, MoreHorizontal, Trash2, Edit2, Clock, Paperclip } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import axios from 'axios'
 import toast from 'react-hot-toast'

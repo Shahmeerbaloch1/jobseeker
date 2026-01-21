@@ -13,9 +13,8 @@ export default function Register() {
         e.preventDefault()
         try {
             const res = await axios.post('http://localhost:5000/api/auth/register', formData)
-            login(res.data.user, res.data.token)
-            toast.success('Account created!')
-            navigate('/')
+            toast.success(res.data.message)
+            navigate('/verification', { state: { email: formData.email } })
         } catch (error) {
             toast.error(error.response?.data?.message || 'Registration failed')
         }

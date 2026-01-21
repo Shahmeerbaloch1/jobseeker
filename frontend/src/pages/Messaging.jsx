@@ -32,11 +32,14 @@ export default function Messaging() {
                 const partnerId = activeChat?._id || activeChat?.id
                 const senderId = typeof message.sender === 'object' ? message.sender._id : message.sender
 
+                // If chat is open with sender, append message and mark read
                 if (partnerId && senderId === partnerId) {
                     setMessages(prev => [...prev, message])
                     markAsRead(partnerId)
                 }
-                fetchConnections() // Re-sort list in real-time
+
+                // Refresh list to update order and unread counts
+                fetchConnections()
             })
         }
 
@@ -80,18 +83,19 @@ export default function Messaging() {
 
     const fetchConnections = async () => {
         try {
-            // First fetch existing conversations (sorted by latest msg)
+            // Fetch sorted conversations with unread counts from backend
             const resConversations = await axios.get(`http://localhost:5000/api/messages/conversations/${user._id || user.id}`)
-            const existingConvIds = resConversations.data.map(c => c._id)
 
-            // Then fetch all connections that don't have messages yet
+            // Fetch interactions to find potential new chats
+            // NOTE: Ideally backend handles "potential connections" too, but keeping hybrid approach for now
             const resUsers = await axios.get(`http://localhost:5000/api/users?userId=${user._id || user.id}`)
-            const acceptedConnections = resUsers.data.filter(u =>
-                u.connectionStatus === 'accepted' && !existingConvIds.includes(u._id)
+
+            const existingIds = resConversations.data.map(c => c._id)
+            const newConnections = resUsers.data.filter(u =>
+                u.connectionStatus === 'accepted' && !existingIds.includes(u._id)
             )
 
-            // Combine: Conversations first (active), then silent connections
-            setConversations([...resConversations.data, ...acceptedConnections])
+            setConversations([...resConversations.data, ...newConnections])
         } catch (error) {
             console.error('Fetch connections error:', error)
         }
@@ -157,36 +161,45 @@ export default function Messaging() {
                         </div>
                     ) : (
                         conversations.map(u => {
-                            const hasLastMsg = u.lastMessage
-                            const isUnread = hasLastMsg && !hasLastMsg.read && hasLastMsg.recipient === (user._id || user.id)
+                            // Backend now returns latestMessage and unreadCount
+                            const hasLastMsg = u.latestMessage
+                            const unreadCount = u.unreadCount || 0
 
                             return (
                                 <div
                                     key={u._id}
                                     onClick={() => setActiveChat(u)}
-                                    className={`p-3 sm:p-4 flex items-center gap-3 sm:gap-4 cursor-pointer hover:bg-gray-50 transition-all border-b border-gray-50 ${activeChat?._id === u._id ? 'bg-blue-50/50' : ''} ${isUnread ? 'bg-blue-50/30' : ''}`}
+                                    className={`p-3 sm:p-4 flex items-center gap-3 sm:gap-4 cursor-pointer hover:bg-gray-50 transition-all border-b border-gray-50 ${activeChat?._id === u._id ? 'bg-blue-50/60' : ''} ${unreadCount > 0 ? 'bg-blue-50/20' : ''}`}
                                 >
                                     <Link to={`/profile/${u._id}`} onClick={(e) => e.stopPropagation()} className="relative shrink-0">
                                         {u.profilePic ? (
                                             <img src={getMediaUrl(u.profilePic)} className="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white shadow-sm" />
                                         ) : (
-                                            <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-full flex items-center justify-center font-bold text-white shadow-sm border-2 border-white text-sm sm:text-base">
-                                                {u.name[0]}
+                                            <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center font-bold text-gray-500 text-sm sm:text-base">
+                                                {u.name?.[0]}
                                             </div>
                                         )}
-                                        <div className={`absolute bottom-0.5 right-0.5 w-2.5 h-2.5 ${isUnread ? 'bg-blue-600 animate-pulse' : 'bg-green-500'} border-2 border-white rounded-full`}></div>
+                                        {unreadCount > 0 && (
+                                            <div className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white min-w-[18px] text-center shadow-sm">
+                                                {unreadCount}
+                                            </div>
+                                        )}
                                     </Link>
                                     <div className="flex-1 overflow-hidden">
                                         <div className="flex justify-between items-start gap-2 mb-0.5">
-                                            <span className={`text-[13px] sm:text-[14px] truncate ${isUnread ? 'font-black text-gray-900' : 'font-bold text-gray-700'}`}>{u.name}</span>
-                                            {hasLastMsg && (
-                                                <span className="text-[9px] text-gray-400 font-bold uppercase shrink-0">
-                                                    {formatDistanceToNow(new Date(hasLastMsg.createdAt), { addSuffix: false }).replace('about ', '').replace(' minutes', 'm').replace(' minute', 'm').replace(' hours', 'h').replace(' hour', 'h').replace(' days', 'd').replace(' day', 'd')}
+                                            <span className={`text-[13px] sm:text-[14px] truncate ${unreadCount > 0 ? 'font-black text-gray-900' : 'font-bold text-gray-700'}`}>{u.name}</span>
+                                            {hasLastMsg?.createdAt && (
+                                                <span className={`text-[9px] font-bold uppercase shrink-0 ${unreadCount > 0 ? 'text-blue-600' : 'text-gray-400'}`}>
+                                                    {(() => {
+                                                        const date = new Date(hasLastMsg.createdAt)
+                                                        return isNaN(date.getTime()) ? '' : formatDistanceToNow(date, { addSuffix: false }).replace('about ', '').replace(' minutes', 'm').replace(' minute', 'm').replace(' hours', 'h').replace(' hour', 'h').replace(' days', 'd').replace(' day', 'd')
+                                                    })()}
                                                 </span>
                                             )}
                                         </div>
-                                        <p className={`text-[10px] truncate tracking-tight uppercase ${isUnread ? 'text-blue-600 font-black' : 'text-gray-500 font-bold'}`}>
-                                            {isUnread ? 'New Message' : (hasLastMsg ? (hasLastMsg.attachment ? 'Sent a file' : hasLastMsg.content) : (u.headline || 'Job Seeker'))}
+                                        <p className={`text-[10px] truncate tracking-tight ${unreadCount > 0 ? 'text-gray-900 font-extrabold' : 'text-gray-500 font-medium'}`}>
+                                            {hasLastMsg?.isOwn ? 'You: ' : ''}
+                                            {hasLastMsg?.content || (hasLastMsg ? 'Sent an attachment' : (u.headline || 'Job Seeker'))}
                                         </p>
                                     </div>
                                 </div>

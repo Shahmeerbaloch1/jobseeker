@@ -6,6 +6,7 @@ import Feed from '../pages/Feed'
 import Jobs from '../pages/Jobs'
 import Login from '../pages/Login'
 import Register from '../pages/Register'
+import Verification from '../pages/Verification'
 import Network from '../pages/Network'
 import Messaging from '../pages/Messaging'
 import Notifications from '../pages/Notifications'
@@ -29,6 +30,7 @@ export default function AppRoutes() {
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/verification" element={<Verification />} />
 
                 <Route path="/" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
                 <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />

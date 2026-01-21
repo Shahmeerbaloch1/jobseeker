@@ -1,13 +1,15 @@
 import { useState, useEffect, useContext } from 'react'
 import { UserContext } from '../context/UserContext'
 import axios from 'axios'
-import { Bell, UserPlus, Briefcase, MessageSquare } from 'lucide-react'
+import { Bell, UserPlus, Briefcase, MessageSquare, ThumbsUp } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 
 export default function Notifications() {
     const { user } = useContext(UserContext)
     const [notifications, setNotifications] = useState([])
+    const navigate = useNavigate()
 
     useEffect(() => {
         fetchNotifications()
@@ -22,12 +24,48 @@ export default function Notifications() {
         }
     }
 
-    const handleMarkRead = async (id) => {
-        try {
-            await axios.put('http://localhost:5000/api/notifications/read', { notificationId: id })
-            setNotifications(notifications.map(n => n._id === id ? { ...n, read: true } : n))
-        } catch (error) {
-            console.error(error)
+    const handleNotificationClick = async (notification) => {
+        if (!notification.read) {
+            try {
+                await axios.put('http://localhost:5000/api/notifications/read', { notificationId: notification._id })
+                setNotifications(notifications.map(n => n._id === notification._id ? { ...n, read: true } : n))
+            } catch (error) {
+                console.error(error)
+            }
+        }
+
+        // Navigation logic
+        const { type, relatedId, sender } = notification
+
+        // If no relatedId, usually go to profile of sender
+        const targetId = relatedId || (sender?._id || sender)
+
+        switch (type) {
+            case 'connection_request':
+            case 'connection_accepted':
+                navigate(`/profile/${sender?._id || sender}`)
+                break
+            case 'new_job':
+            case 'job_apply':
+            case 'job_application':
+            case 'application_status':
+                if (relatedId) navigate(`/jobs/${relatedId}`)
+                break
+            case 'like':
+            case 'comment':
+                // Assuming we might have a single post view or just go to feed. 
+                // Currently no /posts/:id route in AppRoutes, so maybe just go to profile or show toast?
+                // Let's assume we can navigate to the profile of the liker for now, OR if we had a post detail page 
+                if (relatedId) {
+                    // For now, since we don't have a dedicated post page (except maybe in feed), 
+                    // we can't deep direct easily without that route. 
+                    // Let's redirect to sender profile as a meaningful fallback or Feed
+                    navigate('/') // Or create a PostDetails page later
+                    toast('View this post in your feed')
+                }
+                break
+            default:
+                break
         }
     }
 
@@ -35,8 +73,8 @@ export default function Notifications() {
         switch (type) {
             case 'connection_request': return <UserPlus className="text-blue-600" />
             case 'new_job': return <Briefcase className="text-green-600" />
-            case 'like': return <Bell className="text-red-500" /> // Use Heart if available, else Bell
-            case 'comment': return <MessageSquare className="text-orange-500" />
+            case 'like': return <ThumbsUp className="text-blue-600" />
+            case 'comment': return <MessageSquare className="text-green-600" />
             case 'job_application':
             case 'job_apply':
             case 'application_status': return <Briefcase className="text-blue-600" />
@@ -47,6 +85,7 @@ export default function Notifications() {
     const getMessage = (n) => {
         switch (n.type) {
             case 'connection_request': return `sent you a connection request`
+            case 'connection_accepted': return `accepted your connection request`
             case 'new_job': return `posted a new job`
             case 'like': return `liked your post`
             case 'comment': return `commented on your post`
@@ -62,7 +101,11 @@ export default function Notifications() {
             <div>
                 {notifications.length === 0 ? <p className="p-4 text-center text-gray-500">No notifications yet.</p> : (
                     notifications.map(n => (
-                        <div key={n._id} className={`flex items-start gap-4 p-4 border-b last:border-0 hover:bg-gray-50 ${!n.read ? 'bg-blue-50' : ''}`} onClick={() => handleMarkRead(n._id)}>
+                        <div
+                            key={n._id}
+                            className={`flex items-start gap-4 p-4 border-b last:border-0 hover:bg-gray-50 cursor-pointer ${!n.read ? 'bg-blue-50' : ''}`}
+                            onClick={() => handleNotificationClick(n)}
+                        >
                             <div className="mt-1">{getIcon(n.type)}</div>
                             <div className="flex-1">
                                 <p className="text-sm text-gray-800">
