@@ -1,9 +1,11 @@
-import { useState, useContext } from 'react'
+import { useState, useContext, useCallback } from 'react'
 import { UserContext } from '../context/UserContext'
-import { Image, Paperclip, Send, X, Play, Clock } from 'lucide-react'
+import { Image, Paperclip, Send, X, Play, Clock, Check, ZoomIn, ZoomOut } from 'lucide-react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
+import Cropper from 'react-easy-crop'
+import getCroppedImg from '../utils/cropImage'
 
 export default function CreatePost({ onPostCreated }) {
     const { user } = useContext(UserContext)
@@ -12,6 +14,17 @@ export default function CreatePost({ onPostCreated }) {
     const [preview, setPreview] = useState(null)
     const [loading, setLoading] = useState(false)
 
+    // Cropping State
+    const [isCropping, setIsCropping] = useState(false)
+    const [crop, setCrop] = useState({ x: 0, y: 0 })
+    const [zoom, setZoom] = useState(1)
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
+    const [tempImgSrc, setTempImgSrc] = useState(null)
+
+
+    const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+        setCroppedAreaPixels(croppedAreaPixels)
+    }, [])
 
     const handleFileSelect = (e) => {
         const file = e.target.files[0]
@@ -23,14 +36,41 @@ export default function CreatePost({ onPostCreated }) {
                 return
             }
 
-            setSelectedFile(file)
             if (file.type.startsWith('image/')) {
-                setPreview(URL.createObjectURL(file))
-            } else if (file.type.startsWith('video/')) {
-                setPreview(URL.createObjectURL(file)) // Video preview
+                const reader = new FileReader()
+                reader.addEventListener('load', () => {
+                    setTempImgSrc(reader.result)
+                    setIsCropping(true)
+                })
+                reader.readAsDataURL(file)
             } else {
-                setPreview(null)
+                setSelectedFile(file)
+                if (file.type.startsWith('video/')) {
+                    setPreview(URL.createObjectURL(file))
+                } else {
+                    setPreview(null)
+                }
             }
+        }
+    }
+
+    const cancelCrop = () => {
+        setIsCropping(false)
+        setTempImgSrc(null)
+        // Reset input if needed, though react handles file inputs trickily
+    }
+
+    const performCrop = async () => {
+        try {
+            const croppedImageBlob = await getCroppedImg(tempImgSrc, croppedAreaPixels)
+            const file = new File([croppedImageBlob], "cropped-image.jpg", { type: "image/jpeg" })
+            setSelectedFile(file)
+            setPreview(URL.createObjectURL(file))
+            setIsCropping(false)
+            setTempImgSrc(null)
+        } catch (e) {
+            console.error(e)
+            toast.error("Failed to crop image")
         }
     }
 
@@ -149,6 +189,54 @@ export default function CreatePost({ onPostCreated }) {
                     </div>
                 </div>
             </div>
+            {isCropping && (
+                <div className="fixed inset-0 z-[100] bg-black/80 flex flex-col animate-fade-in">
+                    <div className="relative flex-1 p-4">
+                        <Cropper
+                            image={tempImgSrc}
+                            crop={crop}
+                            zoom={zoom}
+                            aspect={4 / 3}
+                            onCropChange={setCrop}
+                            onCropComplete={onCropComplete}
+                            onZoomChange={setZoom}
+                        />
+                    </div>
+
+                    <div className="bg-white p-4 pb-8 rounded-t-3xl sm:rounded-none sm:p-6">
+                        <div className="max-w-xl mx-auto space-y-4">
+                            <div className="flex items-center gap-4">
+                                <ZoomOut size={20} className="text-gray-400" />
+                                <input
+                                    type="range"
+                                    value={zoom}
+                                    min={1}
+                                    max={3}
+                                    step={0.1}
+                                    onChange={(e) => setZoom(Number(e.target.value))}
+                                    className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                />
+                                <ZoomIn size={20} className="text-gray-400" />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={cancelCrop}
+                                    className="flex-1 py-3 text-slate-600 font-bold bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={performCrop}
+                                    className="flex-1 py-3 text-white font-bold bg-blue-600 rounded-xl hover:bg-blue-700 transition-colors flex justify-center items-center gap-2"
+                                >
+                                    <Check size={18} strokeWidth={3} /> Crop & Upload
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

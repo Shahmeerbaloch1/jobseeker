@@ -77,6 +77,12 @@ export const applyForJob = async (req, res) => {
             }
         }
 
+        // Check for existing application
+        const existingApplication = await Application.findOne({ job: jobId, applicant: applicantId })
+        if (existingApplication) {
+            return res.status(400).json({ message: 'You have already applied for this job' })
+        }
+
         const application = await Application.create({
             job: jobId,
             applicant: applicantId,
@@ -88,32 +94,20 @@ export const applyForJob = async (req, res) => {
             responses: parsedResponses
         })
 
-        // Notify Job Author
+        // Add applicant to job and notify author
         const job = await Job.findById(jobId)
-        if (job.author) { // Should be populated, but we just need ID. Wait, finding Job again? passed job ID.
-            // We need to fetch job to know who the author is, unless we trust populates or pass it? 
-            // Best to fetch job to ensure it exists and get author.
-            // Wait, logic above already checks `Job.findById(jobId)`?
-            // Let's see the start of function.
-            // I will assume earlier code fetched 'job'. If not I will fetch it.
-        }
+        if (!job) return res.status(404).json({ message: 'Job not found' })
 
-        // Actually, let's just use the `job` if it was fetched in previous lines, or fetch it.
-        // Looking at snippet in step 664: `const job = await Job.findById(jobId)`. 
-        // So `job` variable exists.
+        // Add to applicants list if not present (redundant check if UI works, but safe)
+        if (!job.applicants.includes(applicantId)) {
+            job.applicants.push(applicantId)
+            await job.save()
+        }
 
         await Notification.create({
             recipient: job.author,
             sender: applicantId,
             type: 'job_application',
-            relatedId: jobId, // or application._id? Maybe Job ID to link to job. 
-            // Or better: link to application so company can review it.
-            // Let's link to application._id if relatedId is generic. 
-            // But frontend typically routes based on type. 
-            // If type 'job_application', relatedId could be Job.
-            // Let's stick to Job ID for now, notifications usually redirect to relevant resource.
-            // Company wants to see APPLICANT. So maybe redirect to Dashboard? 
-            // Let's use application._id and handle it on frontend.
             relatedId: application._id
         })
 

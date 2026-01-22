@@ -1,8 +1,9 @@
 import { useState, useEffect, useContext } from 'react'
 import axios from 'axios'
 import { UserContext } from '../context/UserContext'
-import { Briefcase, Calendar, Clock, ChevronRight, Bookmark, Users, ExternalLink, MessageSquare, Check, X, Ban, FileText, MapPin, Trash2 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Briefcase, Calendar, Clock, ChevronRight, Bookmark, Users, ExternalLink, MessageSquare, Check, X, Ban, FileText, MapPin, Trash2, Eye } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import ApplicationView from '../components/ApplicationView'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
 
@@ -12,7 +13,9 @@ export default function MyItems() {
     const [loading, setLoading] = useState(true)
     const [selectedJob, setSelectedJob] = useState(null)
     const [applicants, setApplicants] = useState([])
+    const [selectedApplicant, setSelectedApplicant] = useState(null)
     const [loadingApplicants, setLoadingApplicants] = useState(false)
+    const navigate = useNavigate()
 
     useEffect(() => {
         const fetchData = async () => {
@@ -189,19 +192,27 @@ export default function MyItems() {
                                                     <div key={app._id} className="p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2rem] border border-slate-50 bg-white hover:shadow-2xl hover:shadow-slate-100 transition-all duration-500 group/app">
                                                         <div className="flex flex-col xl:flex-row justify-between gap-6 sm:gap-10">
                                                             <div className="flex gap-4 sm:gap-8 items-start">
-                                                                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-[1.75rem] overflow-hidden shrink-0 shadow-2xl shadow-slate-200 border-2 border-white ring-1 ring-slate-100 group-hover/app:scale-105 transition-transform duration-500">
+                                                                <button onClick={(e) => { e.stopPropagation(); navigate(`/profile/${app.applicant?._id}`) }} className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl sm:rounded-[1.75rem] overflow-hidden shrink-0 shadow-2xl shadow-slate-200 border-2 border-white ring-1 ring-slate-100 group-hover/app:scale-105 transition-transform duration-500 cursor-pointer text-left p-0">
                                                                     {app.applicant?.profilePic ? (
                                                                         <img src={app.applicant?.profilePic.startsWith('http') ? app.applicant?.profilePic : `http://localhost:5000${app.applicant?.profilePic}`} className="w-full h-full object-cover" />
                                                                     ) : (
                                                                         <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white font-black text-xl sm:text-3xl">{app.applicant?.name?.[0]}</div>
                                                                     )}
-                                                                </div>
+                                                                </button>
                                                                 <div className="space-y-2 sm:space-y-4">
                                                                     <div>
-                                                                        <h4 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight mb-0.5 sm:mb-1">{app.applicant?.name}</h4>
+                                                                        <button onClick={() => navigate(`/profile/${app.applicant?._id}`)} className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight mb-0.5 sm:mb-1 hover:underline text-left">
+                                                                            {app.applicant?.name}
+                                                                        </button>
                                                                         <p className="text-slate-500 font-bold text-xs sm:text-sm tracking-tight">{app.applicant?.headline || 'High-Impact Professional'}</p>
                                                                     </div>
                                                                     <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                                                                        <button
+                                                                            onClick={() => setSelectedApplicant(app)}
+                                                                            className="flex items-center gap-2 text-indigo-600 text-[9px] sm:text-[11px] font-black uppercase tracking-widest bg-indigo-50 px-3 py-2 sm:px-6 sm:py-3 rounded-lg sm:rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                                                        >
+                                                                            <Eye size={14} className="sm:w-4 sm:h-4" /> Review
+                                                                        </button>
                                                                         <a
                                                                             href={`http://localhost:5000${app.resumeUrl}`}
                                                                             target="_blank"
@@ -266,40 +277,73 @@ export default function MyItems() {
                             </div>
                         )}
                     </main>
-                </div>
+                </div >
 
-                {/* Custom Delete Modal */}
-                {showDeleteModal && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowDeleteModal(false)}>
-                        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-scale-up border border-gray-100" onClick={e => e.stopPropagation()}>
-                            <div className="p-8 text-center bg-white">
-                                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500 animate-pulse">
-                                    <Trash2 size={32} />
+                {/* Application View Modal */}
+                {
+                    selectedApplicant && (
+                        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in">
+                            <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl animate-scale-up overflow-hidden">
+                                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                                    <div>
+                                        <h2 className="text-xl font-black text-gray-900">Applicant Details</h2>
+                                        <p className="text-sm text-gray-500">Reviewing application for {selectedApplicant.applicantName}</p>
+                                    </div>
+                                    <button onClick={() => setSelectedApplicant(null)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                                        <X size={20} className="text-gray-500" />
+                                    </button>
                                 </div>
-                                <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Delete Opportunity?</h3>
-                                <p className="text-slate-500 font-medium text-sm leading-relaxed">
-                                    This action cannot be undone. The job listing and all associated applications will be permanently removed.
-                                </p>
-                            </div>
-                            <div className="flex border-t border-slate-100">
-                                <button
-                                    onClick={() => setShowDeleteModal(false)}
-                                    className="flex-1 py-4 text-slate-600 font-bold hover:bg-slate-50 transition-colors text-sm uppercase tracking-widest"
-                                >
-                                    Cancel
-                                </button>
-                                <div className="w-px bg-slate-100"></div>
-                                <button
-                                    onClick={confirmDeleteJob}
-                                    className="flex-1 py-4 text-red-600 font-black hover:bg-red-50 transition-colors text-sm uppercase tracking-widest"
-                                >
-                                    Delete
-                                </button>
+                                <div className="flex-1 overflow-y-auto p-6">
+                                    <ApplicationView
+                                        applicantDetails={{
+                                            name: selectedApplicant.applicantName,
+                                            email: selectedApplicant.applicantEmail,
+                                            phone: selectedApplicant.applicantPhone
+                                        }}
+                                        resumeUrl={selectedApplicant.resumeUrl}
+                                        coverLetter={selectedApplicant.coverLetter}
+                                        responses={selectedApplicant.responses}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )
+                }
+
+                {/* Custom Delete Modal */}
+                {
+                    showDeleteModal && (
+                        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowDeleteModal(false)}>
+                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-scale-up border border-gray-100" onClick={e => e.stopPropagation()}>
+                                <div className="p-8 text-center bg-white">
+                                    <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500 animate-pulse">
+                                        <Trash2 size={32} />
+                                    </div>
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Delete Opportunity?</h3>
+                                    <p className="text-slate-500 font-medium text-sm leading-relaxed">
+                                        This action cannot be undone. The job listing and all associated applications will be permanently removed.
+                                    </p>
+                                </div>
+                                <div className="flex border-t border-slate-100">
+                                    <button
+                                        onClick={() => setShowDeleteModal(false)}
+                                        className="flex-1 py-4 text-slate-600 font-bold hover:bg-slate-50 transition-colors text-sm uppercase tracking-widest"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <div className="w-px bg-slate-100"></div>
+                                    <button
+                                        onClick={confirmDeleteJob}
+                                        className="flex-1 py-4 text-red-600 font-black hover:bg-red-50 transition-colors text-sm uppercase tracking-widest"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                }
+            </div >
         )
     }
 

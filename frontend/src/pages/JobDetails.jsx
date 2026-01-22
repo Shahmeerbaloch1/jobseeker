@@ -4,6 +4,7 @@ import { UserContext } from '../context/UserContext'
 import axios from 'axios'
 import { Building, MapPin, Clock, Upload, X, Trash2, ChevronLeft, ChevronRight, FileText, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import ApplicationView from '../components/ApplicationView'
 
 export default function JobDetails() {
     const { id } = useParams()
@@ -23,6 +24,28 @@ export default function JobDetails() {
     useEffect(() => {
         fetchJob()
     }, [id])
+
+    const [hasApplied, setHasApplied] = useState(false)
+
+    useEffect(() => {
+        if (user && id) {
+            checkApplicationStatus()
+        }
+    }, [id, user])
+
+    const checkApplicationStatus = async () => {
+        try {
+            const res = await axios.get('http://localhost:5000/api/jobs/applications/me')
+            const myApplications = res.data
+            // Check if current job ID is in my applications
+            const found = myApplications.some(app =>
+                (typeof app.job === 'object' ? app.job._id === id : app.job === id)
+            )
+            setHasApplied(found)
+        } catch (error) {
+            console.error("Failed to check application status", error)
+        }
+    }
 
     useEffect(() => {
         if (user) {
@@ -105,12 +128,15 @@ export default function JobDetails() {
             })
             toast.success('Application submitted successfully!')
             setShowApplyModal(false)
+            // Refresh application status
+            checkApplicationStatus()
+            fetchJob()
             // Reset state
             setStep(1)
             setResume(null)
             setAnswers({})
         } catch (error) {
-            toast.error('Failed to apply')
+            toast.error(error.response?.data?.message || 'Failed to apply')
             console.error(error)
         }
     }
@@ -123,11 +149,6 @@ export default function JobDetails() {
         (user.id && job.author._id && user.id.toString() === job.author._id.toString()) ||
         (user._id && job.author === user._id) ||
         (user.id && job.author === user.id)
-    )
-
-    const userHasApplied = user && job.applicants && (
-        job.applicants.includes(user._id) ||
-        job.applicants.some(app => app === user._id || (typeof app === 'object' && app._id === user._id))
     )
 
     return (
@@ -152,7 +173,7 @@ export default function JobDetails() {
                                 </button>
                             )}
                             {!isAuthor && (
-                                userHasApplied ? (
+                                hasApplied ? (
                                     <button
                                         disabled
                                         className="bg-green-100 text-green-700 px-8 py-2.5 rounded-xl font-bold text-lg cursor-not-allowed flex items-center gap-2"
@@ -390,52 +411,12 @@ export default function JobDetails() {
                             )}
 
                             {step === 4 && (
-                                <div className="space-y-6">
-                                    <h3 className="text-xl font-bold text-gray-900 mb-6">Review your Application</h3>
-
-                                    <div className="space-y-6">
-                                        {/* Resume Preview */}
-                                        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-                                            <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
-                                                <FileText size={18} /> Resume Preview
-                                            </h4>
-                                            {resume && (
-                                                <div className="aspect-[4/5] w-full bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 relative group">
-                                                    <iframe
-                                                        src={URL.createObjectURL(resume)}
-                                                        className="w-full h-full"
-                                                        title="Resume Preview"
-                                                    />
-                                                    {/* Overlay to prevent interaction if needed, or simple direct display */}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Details Review */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-                                                <h4 className="font-bold text-gray-700 mb-2">Contact Info</h4>
-                                                <p className="text-sm font-medium">{applicantDetails.name}</p>
-                                                <p className="text-sm text-gray-500">{applicantDetails.email}</p>
-                                                <p className="text-sm text-gray-500">{applicantDetails.phone}</p>
-                                            </div>
-
-                                            {(job.questions && job.questions.length > 0) && (
-                                                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-                                                    <h4 className="font-bold text-gray-700 mb-2">Screening Answers</h4>
-                                                    <div className="space-y-2">
-                                                        {Object.entries(answers).map(([q, a], i) => (
-                                                            <div key={i}>
-                                                                <p className="text-xs text-gray-500 font-semibold">{q}</p>
-                                                                <p className="text-sm font-bold text-blue-600">{a}</p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                                <ApplicationView
+                                    applicantDetails={applicantDetails}
+                                    resume={resume}
+                                    coverLetter={coverLetter}
+                                    responses={answers}
+                                />
                             )}
                         </div>
 

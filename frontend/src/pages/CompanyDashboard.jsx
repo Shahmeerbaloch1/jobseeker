@@ -1,15 +1,17 @@
 import { useState, useEffect, useContext } from 'react'
 import { UserContext } from '../context/UserContext'
 import axios from 'axios'
-import { Eye, Check, X, StopCircle } from 'lucide-react'
+import { Eye, Check, X, StopCircle, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatDistanceToNow } from 'date-fns'
+import ApplicationView from '../components/ApplicationView'
 
 export default function CompanyDashboard() {
     const { user } = useContext(UserContext)
     const [jobs, setJobs] = useState([])
     const [selectedJob, setSelectedJob] = useState(null)
     const [applicants, setApplicants] = useState([])
+    const [selectedApplicant, setSelectedApplicant] = useState(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -139,27 +141,14 @@ export default function CompanyDashboard() {
                                     </span>
                                 </div>
 
-                                {app.coverLetter && (
-                                    <div className="bg-gray-50 p-3 rounded mb-3">
-                                        <p className="text-sm text-gray-700">{app.coverLetter}</p>
-                                    </div>
-                                )}
+                                <div className="flex gap-2 flex-wrap">
+                                    <button
+                                        onClick={() => setSelectedApplicant(app)}
+                                        className="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-indigo-700 flex items-center gap-1"
+                                    >
+                                        <Eye size={16} /> Review
+                                    </button>
 
-                                {app.responses && app.responses.length > 0 && (
-                                    <div className="bg-blue-50 p-3 rounded mb-3 border border-blue-100">
-                                        <h5 className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-2">Screening Responses</h5>
-                                        <div className="space-y-2">
-                                            {app.responses.map((resp, idx) => (
-                                                <div key={idx} className="flex flex-col sm:flex-row sm:justify-between sm:gap-4 text-sm border-b border-blue-100 last:border-0 pb-1 last:pb-0">
-                                                    <span className="text-gray-600 font-medium">{resp.questionText}</span>
-                                                    <span className="text-blue-700 font-bold">{resp.answer}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="flex gap-2">
                                     {app.resumeUrl && (
                                         <a
                                             href={`http://localhost:5000${app.resumeUrl}`}
@@ -167,7 +156,7 @@ export default function CompanyDashboard() {
                                             rel="noreferrer"
                                             className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold hover:bg-blue-700 flex items-center gap-1"
                                         >
-                                            <Eye size={16} /> View CV
+                                            <FileText size={16} /> CV
                                         </a>
                                     )}
                                     {app.status !== 'accepted' && (
@@ -200,6 +189,35 @@ export default function CompanyDashboard() {
                     </div>
                 )}
             </div>
+
+            {/* Application View Modal */}
+            {selectedApplicant && (
+                <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in">
+                    <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl animate-scale-up overflow-hidden">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div>
+                                <h2 className="text-xl font-black text-gray-900">Applicant Details</h2>
+                                <p className="text-sm text-gray-500">Reviewing application for {selectedApplicant.applicantName}</p>
+                            </div>
+                            <button onClick={() => setSelectedApplicant(null)} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+                                <X size={20} className="text-gray-500" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6">
+                            <ApplicationView
+                                applicantDetails={{
+                                    name: selectedApplicant.applicantName,
+                                    email: selectedApplicant.applicantEmail,
+                                    phone: selectedApplicant.applicantPhone
+                                }}
+                                resumeUrl={selectedApplicant.resumeUrl}
+                                coverLetter={selectedApplicant.coverLetter}
+                                responses={selectedApplicant.responses}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
