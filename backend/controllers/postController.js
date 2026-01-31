@@ -68,17 +68,24 @@ export const likePost = async (req, res) => {
 
             // Notify author
             if (post.author.toString() !== userId) {
-                await Notification.create({
+                const newNotification = await Notification.create({
                     recipient: post.author,
                     sender: userId,
                     type: 'like',
-                    relatedId: post._id
+                    relatedId: post._id,
+                    message: 'liked your post'
                 })
-                // Real-time notification could be emitted here
+
+                const sender = await User.findById(userId).select('name profilePic headline')
+                req.io.to(post.author.toString()).emit('new_notification', {
+                    ...newNotification.toObject(),
+                    sender
+                })
             }
         } else {
             post.likes = post.likes.filter(id => id.toString() !== userId)
             await post.save()
+            // Optionally remove notification if unlike?
         }
         res.json(post)
     } catch (error) {
@@ -103,11 +110,18 @@ export const commentOnPost = async (req, res) => {
 
         // Notify author
         if (post.author.toString() !== userId) {
-            await Notification.create({
+            const newNotification = await Notification.create({
                 recipient: post.author,
                 sender: userId,
                 type: 'comment',
-                relatedId: post._id
+                relatedId: post._id,
+                message: 'commented on your post'
+            })
+
+            const sender = await User.findById(userId).select('name profilePic headline')
+            req.io.to(post.author.toString()).emit('new_notification', {
+                ...newNotification.toObject(),
+                sender
             })
         }
 
@@ -161,11 +175,18 @@ export const sharePost = async (req, res) => {
 
             // Notify author about the share
             if (post.author.toString() !== userId) {
-                await Notification.create({
+                const newNotification = await Notification.create({
                     recipient: post.author,
                     sender: userId,
                     type: 'share',
-                    relatedId: post._id
+                    relatedId: post._id,
+                    message: 'shared your post'
+                })
+
+                const sender = await User.findById(userId).select('name profilePic headline')
+                req.io.to(post.author.toString()).emit('new_notification', {
+                    ...newNotification.toObject(),
+                    sender
                 })
             }
         } else {

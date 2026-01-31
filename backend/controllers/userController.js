@@ -62,20 +62,25 @@ export const updateUserProfile = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
     try {
-        // We need to know the connection status relative to the requester
-        // This requires passing the requester's ID, e.g. via query or middleware (req.user)
-        // Since we don't have middleware fully wired on all routes yet, let's assume client sends ?userId=<myId>
         const requesterId = req.query.userId
 
-        const users = await User.find().select('name profilePic headline')
+        // 1. Get requester's connections first
+        const requester = await User.findById(requesterId).select('connections')
+        const requesterConnectionIds = requester ? requester.connections.map(id => id.toString()) : []
+
+        // 2. Fetch all users with their connections populated (just IDs needed really, but populated is fine if schema handles it)
+        // Actually for mutual count, we just need the array of IDs. 
+        // Let's use select to get connections array.
+        const users = await User.find().select('name profilePic headline connections')
 
         if (requesterId) {
             const connections = await Connection.find({
                 $or: [{ requester: requesterId }, { recipient: requesterId }]
             })
 
-            // Map user to status
-            const usersWithStatus = users.map(u => {
+            // Map user to status and mutual count
+            const usersWithData = users.map(u => {
+                // Connection Status Logic
                 const conn = connections.find(c =>
                     (c.requester.toString() === requesterId && c.recipient.toString() === u._id.toString()) ||
                     (c.recipient.toString() === requesterId && c.requester.toString() === u._id.toString())
@@ -89,16 +94,45 @@ export const getAllUsers = async (req, res) => {
                     }
                 }
 
+                // Mutual Connections Logic
+                // Filter u.connections that are also in requesterConnectionIds
+                // Note: u.connections might be ObjectIds, need toString comparison
+                const userConnIds = u.connections ? u.connections.map(id => id.toString()) : []
+                const mutualCount = userConnIds.filter(id => requesterConnectionIds.includes(id)).length
+
                 return {
                     ...u.toObject(),
                     connectionStatus: status,
-                    connectionId: conn ? conn._id : null
+                    connectionId: conn ? conn._id : null,
+                    mutualConnections: mutualCount
                 }
             })
-            return res.json(usersWithStatus)
+            return res.json(usersWithData)
         }
 
         res.json(users)
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+}
+
+export const getMutualConnections = async (req, res) => {
+    try {
+        const { userId, targetId } = req.params
+
+        const userA = await User.findById(userId).select('connections')
+        const userB = await User.findById(targetId).select('connections')
+
+        if (!userA || !userB) return res.status(404).json({ message: 'User not found' })
+
+        const userAConns = userA.connections.map(id => id.toString())
+        const userBConns = userB.connections.map(id => id.toString())
+
+        // Find intersection
+        const mutualIds = userAConns.filter(id => userBConns.includes(id))
+
+        const mutuals = await User.find({ _id: { $in: mutualIds } }).select('name profilePic headline')
+        res.json(mutuals)
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
@@ -124,10 +158,17 @@ export const sendConnectionRequest = async (req, res) => {
             status: 'pending'
         })
 
-        await Notification.create({
+        const newNotification = await Notification.create({
             recipient: recipientId,
             sender: requesterId,
-            type: 'connection_request'
+            type: 'connection_request',
+            message: 'sent you a connection request'
+        })
+
+        const sender = await User.findById(requesterId).select('name profilePic headline')
+        req.io.to(recipientId).emit('new_notification', {
+            ...newNotification.toObject(),
+            sender
         })
 
         res.status(201).json(connection)
@@ -149,10 +190,17 @@ export const acceptConnectionRequest = async (req, res) => {
         await User.findByIdAndUpdate(connection.requester, { $push: { connections: connection.recipient } })
         await User.findByIdAndUpdate(connection.recipient, { $push: { connections: connection.requester } })
 
-        await Notification.create({
+        const newNotification = await Notification.create({
             recipient: connection.requester,
             sender: connection.recipient,
-            type: 'connection_accepted'
+            type: 'connection_accepted',
+            message: 'accepted your connection request'
+        })
+
+        const sender = await User.findById(connection.recipient).select('name profilePic headline')
+        req.io.to(connection.requester.toString()).emit('new_notification', {
+            ...newNotification.toObject(),
+            sender
         })
 
         res.json(connection)

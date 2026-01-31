@@ -1,8 +1,12 @@
-import { createContext, useState, useEffect, useRef } from 'react'
+import { createContext, useState, useEffect, useRef, useContext } from 'react'
 import axios from 'axios'
 import { io } from 'socket.io-client'
 
 export const UserContext = createContext()
+
+export const useUser = () => {
+    return useContext(UserContext)
+}
 
 export function UserProvider({ children }) {
     const [user, setUser] = useState(null)

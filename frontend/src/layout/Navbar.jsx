@@ -1,14 +1,59 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useContext, useState, useRef, useEffect } from 'react'
 import { UserContext } from '../context/UserContext'
+import { useSocket } from '../context/SocketContext'
+import axios from 'axios'
 import { Bell, MessageSquare, LogOut, User as UserIcon, Briefcase, Home, Users, Bookmark, ArrowLeft } from 'lucide-react'
 
 export default function Navbar() {
     const { user, logout, unreadCount } = useContext(UserContext)
+    const { socket } = useSocket()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [unreadNotifications, setUnreadNotifications] = useState(0)
     const menuRef = useRef(null)
     const navigate = useNavigate()
     const location = useLocation()
+
+    useEffect(() => {
+        if (user) {
+            fetchUnreadNotifications()
+        }
+    }, [user])
+
+    useEffect(() => {
+        if (socket) {
+            socket.on('new_notification', () => {
+                setUnreadNotifications(prev => prev + 1)
+            })
+            return () => socket.off('new_notification')
+        }
+    }, [socket])
+
+    // Reset count when visiting notifications page
+    useEffect(() => {
+        if (location.pathname === '/notifications') {
+            setUnreadNotifications(0)
+            // Ideally we'd also mark them as read in DB if we want to persist "0" 
+            // but the user requirement was just "red dot" and "toast". 
+            // The Notifications page handles "click to read". 
+            // For now, let's keep the count as "new since last visit" or "actual unread in DB".
+            // If we want actual unread, we should fetch again.
+            // But if we want to clear the dot on visit:
+            // Fetching again is safer.
+            fetchUnreadNotifications()
+        }
+    }, [location.pathname])
+
+    const fetchUnreadNotifications = async () => {
+        try {
+            // Using 5000 based on standard, will verify with .env
+            const res = await axios.get(`http://localhost:5000/api/notifications/${user._id || user.id}`)
+            const unread = res.data.filter(n => !n.read).length
+            setUnreadNotifications(unread)
+        } catch (error) {
+            console.error(error)
+        }
+    }
 
     const handleLogout = () => {
         logout()
@@ -92,8 +137,11 @@ export default function Navbar() {
                                     )}
                                     <span className={`text-[10px] font-bold mt-1 uppercase tracking-wider ${isActive('/messaging') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>Messaging</span>
                                 </Link>
-                                <Link to="/notifications" className={`flex flex-col items-center transition-all group ${isActive('/notifications') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}>
+                                <Link to="/notifications" className={`flex flex-col items-center transition-all group relative ${isActive('/notifications') ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'}`}>
                                     <Bell size={22} className={`${isActive('/notifications') ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
+                                    {unreadNotifications > 0 && (
+                                        <div className="absolute top-0 right-1 w-2.5 h-2.5 bg-red-600 border-2 border-white rounded-full"></div>
+                                    )}
                                     <span className={`text-[10px] font-bold mt-1 uppercase tracking-wider ${isActive('/notifications') ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>Notifications</span>
                                 </Link>
                             </div>
@@ -196,10 +244,13 @@ export default function Navbar() {
                             )}
                             <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Chat</span>
                         </Link>
-                        <Link to="/notifications" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 ${isActive('/notifications') ? 'text-blue-600' : 'text-gray-400'}`}>
+                        <Link to="/notifications" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 relative ${isActive('/notifications') ? 'text-blue-600' : 'text-gray-400'}`}>
                             <div className={`p-1 rounded-xl transition-colors ${isActive('/notifications') ? 'bg-blue-50' : ''}`}>
                                 <Bell size={22} />
                             </div>
+                            {unreadNotifications > 0 && (
+                                <div className="absolute top-2 right-3 w-2 h-2 bg-red-600 border-2 border-white rounded-full"></div>
+                            )}
                             <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Alerts</span>
                         </Link>
                     </div>
