@@ -1,7 +1,10 @@
 import { Bell } from 'lucide-react'
 import Navbar from './Navbar'
 import Sidebar from './Sidebar'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useContext } from 'react'
+import { UserContext } from '../context/UserContext'
+import axios from 'axios'
 
 export default function Layout({ children }) {
     const location = useLocation()
@@ -40,31 +43,7 @@ export default function Layout({ children }) {
 
                         {/* Right Sidebar - Hidden on mobile/tablet, visible on lg+ */}
                         <div className="hidden lg:block col-span-1">
-                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-20">
-                                <div className="p-4 bg-gray-50/50 border-b border-gray-100">
-                                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                                        <Bell size={18} className="text-blue-600" />
-                                        Trending News
-                                    </h3>
-                                </div>
-                                <div className="p-4 space-y-4">
-                                    <div className="group cursor-pointer">
-                                        <h4 className="font-bold text-sm text-gray-800 group-hover:text-blue-600 transition-colors">Tech Hiring Rebounds in 2026</h4>
-                                        <p className="text-[11px] text-gray-500 mt-1">1d ago • 5,234 readers</p>
-                                    </div>
-                                    <div className="group cursor-pointer border-t border-gray-50 pt-3">
-                                        <h4 className="font-bold text-sm text-gray-800 group-hover:text-blue-600 transition-colors">AI Productivity at All-Time High</h4>
-                                        <p className="text-[11px] text-gray-500 mt-1">2d ago • 3,102 readers</p>
-                                    </div>
-                                    <div className="group cursor-pointer border-t border-gray-50 pt-3">
-                                        <h4 className="font-bold text-sm text-gray-800 group-hover:text-blue-600 transition-colors">Remote vs Hybrid: The Debate</h4>
-                                        <p className="text-[11px] text-gray-500 mt-1">3d ago • 8,491 readers</p>
-                                    </div>
-                                </div>
-                                <button className="w-full py-3 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:text-blue-600 hover:bg-gray-50 transition-colors border-t border-gray-50">
-                                    View all stories
-                                </button>
-                            </div>
+                            <RecentJobsSidebar />
                         </div>
                     </div>
                 )}
@@ -72,3 +51,70 @@ export default function Layout({ children }) {
         </div>
     )
 }
+
+function RecentJobsSidebar() {
+    const [jobs, setJobs] = useState([])
+    const { user } = useContext(UserContext)
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        if (user) fetchRecentJobs()
+    }, [user])
+
+    const fetchRecentJobs = async () => {
+        try {
+            const res = await axios.get('http://localhost:5000/api/jobs')
+            // Take top 5 recent
+            setJobs(res.data.slice(0, 5))
+        } catch (error) {
+            console.error('Failed to fetch recent jobs')
+        }
+    }
+
+    const formatTimeAgo = (dateString) => {
+        const date = new Date(dateString)
+        const now = new Date()
+        const diffInSeconds = Math.floor((now - date) / 1000)
+
+        if (diffInSeconds < 60) return 'Just now'
+        const diffInMinutes = Math.floor(diffInSeconds / 60)
+        if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+        const diffInHours = Math.floor(diffInMinutes / 60)
+        if (diffInHours < 24) return `${diffInHours}h ago`
+        const diffInDays = Math.floor(diffInHours / 24)
+        return `${diffInDays}d ago`
+    }
+
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-20">
+            <div className="p-4 bg-gray-50/50 border-b border-gray-100">
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                    <Bell size={18} className="text-blue-600" />
+                    Newest Jobs
+                </h3>
+            </div>
+            <div className="p-4 space-y-4">
+                {jobs.length === 0 ? (
+                    <p className="text-xs text-gray-400 text-center py-4">No recent jobs found.</p>
+                ) : (
+                    jobs.map(job => (
+                        <div key={job._id} onClick={() => navigate(`/jobs/${job._id}`)} className="group cursor-pointer border-b border-gray-50 last:border-0 pb-3 last:pb-0">
+                            <h4 className="font-bold text-sm text-gray-800 group-hover:text-blue-600 transition-colors line-clamp-1">{job.title}</h4>
+                            <p className="text-[11px] text-gray-500 mt-1 flex items-center justify-between">
+                                <span className="truncate max-w-[60%]">{job.company}</span>
+                                <span>{formatTimeAgo(job.createdAt)}</span>
+                            </p>
+                        </div>
+                    ))
+                )}
+            </div>
+            <button
+                onClick={() => navigate('/jobs')}
+                className="w-full py-3 text-[11px] font-black uppercase tracking-widest text-gray-400 hover:text-blue-600 hover:bg-gray-50 transition-colors border-t border-gray-50"
+            >
+                View all jobs
+            </button>
+        </div>
+    )
+}
+
