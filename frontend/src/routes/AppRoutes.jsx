@@ -14,6 +14,7 @@ import Profile from '../pages/Profile'
 import JobDetails from '../pages/JobDetails'
 import CompanyDashboard from '../pages/CompanyDashboard' // New
 import MyItems from '../pages/MyItems'
+import SearchResults from '../pages/SearchResults'
 import ScrollToTop from '../components/ScrollToTop'
 
 function ProtectedRoute({ children }) {
@@ -42,6 +43,7 @@ export default function AppRoutes() {
                 <Route path="/profile/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/company-dashboard" element={<ProtectedRoute><CompanyDashboard /></ProtectedRoute>} />
                 <Route path="/my-items" element={<ProtectedRoute><MyItems /></ProtectedRoute>} />
+                <Route path="/search" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
             </Routes>
         </BrowserRouter>
     )

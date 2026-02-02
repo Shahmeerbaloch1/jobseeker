@@ -13,6 +13,7 @@ router.put('/applications/:id/status', protect, updateApplicationStatus) // Comp
 
 router.post('/', protect, createJob) // Protect job creation
 router.delete('/:id', protect, deleteJob)
+router.get('/search', searchJobs)
 router.get('/', searchJobs)
 router.get('/:id', getJobById)
 

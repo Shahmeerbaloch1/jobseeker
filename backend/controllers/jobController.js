@@ -125,18 +125,45 @@ export const applyForJob = async (req, res) => {
     }
 }
 
+function escapeRegex(text) {
+    if (!text) return '';
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export const searchJobs = async (req, res) => {
     try {
-        const { search, location } = req.query
-        let query = {}
+        const keyword = (req.query.q || req.query.search || req.query.query || '').trim();
+        const { location } = req.query;
 
-        if (search) query.title = { $regex: search, $options: 'i' }
-        if (location) query.location = { $regex: location, $options: 'i' }
+        console.log('--- JOB SEARCH DIAGNOSTIC ---');
+        console.log('Incoming Keyword:', keyword);
 
-        const jobs = await Job.find(query).sort({ createdAt: -1 })
-        res.json(jobs)
+        let query = {};
+
+        if (keyword) {
+            const regex = new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+            console.log('Search Regex:', regex);
+            query.$or = [
+                { title: { $regex: regex } },
+                { company: { $regex: regex } },
+                { description: { $regex: regex } },
+                { skills: { $regex: regex } },
+                { requirements: { $regex: regex } }
+            ];
+        }
+
+        if (location) {
+            query.location = { $regex: location, $options: 'i' };
+        }
+
+        const jobs = await Job.find(query).sort({ createdAt: -1 });
+        console.log(`Query finished. Found ${jobs.length} jobs.`);
+        console.log('-----------------------------');
+
+        res.json(jobs);
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        console.error('JOB SEARCH CONTROLLER ERROR:', error);
+        res.status(500).json({ message: error.message });
     }
 }
 

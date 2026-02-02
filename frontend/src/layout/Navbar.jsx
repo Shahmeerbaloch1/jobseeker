@@ -3,16 +3,27 @@ import { useContext, useState, useRef, useEffect } from 'react'
 import { UserContext } from '../context/UserContext'
 import { useSocket } from '../context/SocketContext'
 import axios from 'axios'
-import { Bell, MessageSquare, LogOut, User as UserIcon, Briefcase, Home, Users, Bookmark, ArrowLeft } from 'lucide-react'
+import { Bell, MessageSquare, LogOut, User as UserIcon, Briefcase, Home, Users, Bookmark, ArrowLeft, Search } from 'lucide-react'
 
 export default function Navbar() {
     const { user, logout, unreadCount } = useContext(UserContext)
     const { socket } = useSocket()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+    const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
     const [unreadNotifications, setUnreadNotifications] = useState(0)
     const menuRef = useRef(null)
     const navigate = useNavigate()
     const location = useLocation()
+
+    const [searchQuery, setSearchQuery] = useState('')
+
+    const handleSearch = (e) => {
+        if (e.key === 'Enter' && searchQuery.trim()) {
+            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+            setSearchQuery('')
+            setIsMobileSearchOpen(false)
+        }
+    }
 
     useEffect(() => {
         if (user) {
@@ -33,13 +44,6 @@ export default function Navbar() {
     useEffect(() => {
         if (location.pathname === '/notifications') {
             setUnreadNotifications(0)
-            // Ideally we'd also mark them as read in DB if we want to persist "0" 
-            // but the user requirement was just "red dot" and "toast". 
-            // The Notifications page handles "click to read". 
-            // For now, let's keep the count as "new since last visit" or "actual unread in DB".
-            // If we want actual unread, we should fetch again.
-            // But if we want to clear the dot on visit:
-            // Fetching again is safer.
             fetchUnreadNotifications()
         }
     }, [location.pathname])
@@ -62,7 +66,12 @@ export default function Navbar() {
 
     const isActive = (path) => location.pathname === path
 
-    // Close menu when clicking outside
+    // Close search and menu when clicking outside or navigating
+    useEffect(() => {
+        setIsMobileSearchOpen(false)
+        setIsMenuOpen(false)
+    }, [location.pathname])
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -101,14 +110,17 @@ export default function Navbar() {
                         </Link>
                     </div>
 
-                    <div className="flex-1 max-w-md hidden md:block">
+                    <div className="flex-1 max-w-md hidden lg:block">
                         <div className="relative group">
                             <input
                                 type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={handleSearch}
                                 placeholder="Search for jobs, skills, or people..."
                                 className="w-full bg-gray-100 border-none rounded-xl py-2 pl-4 pr-10 text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none"
                             />
-                            <Users size={18} className="absolute right-3 top-2.5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
+                            <Search size={18} className="absolute right-3 top-2.5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
                         </div>
                     </div>
 
@@ -147,6 +159,14 @@ export default function Navbar() {
                             </div>
 
                             <div className="h-8 w-px bg-gray-200 hidden md:block mx-2"></div>
+
+                            {/* Mobile Search Toggle */}
+                            <button
+                                onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+                                className="lg:hidden p-2 hover:bg-gray-100 rounded-xl transition-all text-gray-500 hover:text-blue-600"
+                            >
+                                <Search size={22} />
+                            </button>
 
                             {/* User Menu */}
                             <div className="relative" ref={menuRef}>
@@ -203,6 +223,24 @@ export default function Navbar() {
                         </div>
                     )}
                 </div>
+
+                {/* Mobile Search Bar Expansion */}
+                {isMobileSearchOpen && (
+                    <div className="lg:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-100 p-4 animate-in slide-in-from-top duration-200">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                autoFocus
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={handleSearch}
+                                placeholder="Search jobs, skills, or people..."
+                                className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-3 pl-12 pr-4 text-base focus:ring-0 focus:border-blue-500 transition-all outline-none"
+                            />
+                            <Search size={20} className="absolute left-4 top-3.5 text-blue-600" />
+                        </div>
+                    </div>
+                )}
             </nav>
 
             {/* Mobile Bottom Navigation */}
@@ -221,6 +259,18 @@ export default function Navbar() {
                             </div>
                             <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Network</span>
                         </Link>
+                        <button
+                            onClick={() => {
+                                setIsMobileSearchOpen(!isMobileSearchOpen);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 ${isMobileSearchOpen ? 'text-blue-600' : 'text-gray-400'}`}
+                        >
+                            <div className={`p-1 rounded-xl transition-colors ${isMobileSearchOpen ? 'bg-blue-50' : ''}`}>
+                                <Search size={22} />
+                            </div>
+                            <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Search</span>
+                        </button>
                         <Link to="/jobs" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 ${isActive('/jobs') ? 'text-blue-600' : 'text-gray-400'}`}>
                             <div className={`p-1 rounded-xl transition-colors ${isActive('/jobs') ? 'bg-blue-50' : ''}`}>
                                 <Briefcase size={22} />

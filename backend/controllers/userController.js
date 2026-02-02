@@ -237,3 +237,47 @@ export const getProfileViews = async (req, res) => {
         res.status(500).json({ message: error.message })
     }
 }
+
+function escapeRegex(text) {
+    if (!text) return '';
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+export const searchUsers = async (req, res) => {
+    try {
+        const keyword = (req.query.q || req.query.search || req.query.query || '').trim();
+        console.log('--- USER SEARCH DIAGNOSTIC ---');
+        console.log('Incoming Keyword:', keyword);
+
+        if (!keyword) {
+            console.log('Empty keyword, returning []');
+            return res.json([]);
+        }
+
+        // Use a simple regex without over-escaping to ensure partial matches like 'meer' work.
+        const regex = new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        console.log('Search Regex:', regex);
+
+        // Debug: Check if a simple find works
+        const users = await User.find({
+            $or: [
+                { name: { $regex: regex } },
+                { headline: { $regex: regex } },
+                { skills: { $regex: regex } }
+            ]
+        }).select('name headline profilePic skills connections');
+
+        console.log(`Query finished. Found ${users.length} users.`);
+        if (users.length > 0) {
+            console.log('Sample result:', users[0].name);
+        } else {
+            console.log('No users matched this query in the database.');
+        }
+        console.log('------------------------------');
+
+        res.json(users);
+    } catch (error) {
+        console.error('SEARCH CONTROLLER ERROR:', error);
+        res.status(500).json({ message: error.message });
+    }
+}

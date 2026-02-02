@@ -1,10 +1,11 @@
 import express from 'express'
-import { getUserProfile, updateUserProfile, getAllUsers, sendConnectionRequest, acceptConnectionRequest, rejectConnectionRequest, getProfileViews, getMutualConnections } from '../controllers/userController.js'
+import { getUserProfile, updateUserProfile, getAllUsers, sendConnectionRequest, acceptConnectionRequest, rejectConnectionRequest, getProfileViews, getMutualConnections, searchUsers } from '../controllers/userController.js'
 
 import { upload } from '../middleware/upload.js'
 
 const router = express.Router()
 
+router.get('/search', searchUsers)
 router.get('/', getAllUsers)
 router.get('/:id', getUserProfile)
 router.get('/mutual/:userId/:targetId', getMutualConnections)
