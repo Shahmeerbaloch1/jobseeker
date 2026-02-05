@@ -18,8 +18,14 @@ export default function Profile() {
         name: '',
         headline: '',
         bio: '',
-        skills: ''
+        skills: '',
+        contactInfo: {
+            phone: '',
+            website: '',
+            address: ''
+        }
     })
+    const [isContactModalOpen, setIsContactModalOpen] = useState(false)
 
     useEffect(() => {
         if (isOwnProfile) {
@@ -46,7 +52,12 @@ export default function Profile() {
                     name: profileUser.name || '',
                     headline: profileUser.headline || '',
                     bio: profileUser.bio || '',
-                    skills: profileUser.skills ? profileUser.skills.join(', ') : ''
+                    skills: profileUser.skills ? profileUser.skills.join(', ') : '',
+                    contactInfo: {
+                        phone: profileUser.contactInfo?.phone || '',
+                        website: profileUser.contactInfo?.website || '',
+                        address: profileUser.contactInfo?.address || ''
+                    }
                 })
             }
             fetchPosts()
@@ -82,6 +93,11 @@ export default function Profile() {
             skillsArray.forEach(skill => formData.append('skills[]', skill))
 
             if (profilePicFile) formData.append('profilePic', profilePicFile)
+
+            // Append contact info
+            formData.append('contactInfo[phone]', editForm.contactInfo.phone)
+            formData.append('contactInfo[website]', editForm.contactInfo.website)
+            formData.append('contactInfo[address]', editForm.contactInfo.address)
 
             const res = await axios.put(`http://localhost:5000/api/users/${user._id || user.id}`, formData)
             setUser({ ...user, ...res.data })
@@ -148,11 +164,20 @@ export default function Profile() {
                                     <MapPin size={14} className="text-blue-500 sm:w-4 sm:h-4" /> Los Angeles Metropolitan Area
                                 </p>
                                 <span className="hidden sm:inline text-gray-300">•</span>
-                                <span className="text-[11px] sm:text-sm text-blue-600 font-black cursor-pointer hover:underline uppercase tracking-widest">Contact info</span>
+                                <span className="text-[11px] sm:text-sm text-blue-600 font-black cursor-pointer hover:underline uppercase tracking-widest" onClick={() => setIsContactModalOpen(true)}>Contact info</span>
                             </div>
                             <div className="pt-3 flex items-center gap-2">
                                 <div className="flex -space-x-3 overflow-hidden">
-                                    {[1, 2, 3].map(i => (
+                                    {(profileUser.connections || []).slice(0, 3).map((conn, i) => (
+                                        <div key={i} className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-100">
+                                            {conn.profilePic ? (
+                                                <img src={getMediaUrl(conn.profilePic)} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="bg-blue-100 w-full h-full flex items-center justify-center text-blue-600 font-bold text-[10px]">{conn.name?.[0]}</div>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {(!profileUser.connections || profileUser.connections.length === 0) && [1, 2, 3].map(i => (
                                         <div key={i} className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-100">
                                             <div className="bg-blue-100 w-full h-full flex items-center justify-center text-blue-600 font-bold text-[10px]">{i}</div>
                                         </div>
@@ -306,10 +331,116 @@ export default function Profile() {
                                     placeholder="e.g. React, Node.js, Design"
                                 />
                             </div>
+
+                            <div className="border-t pt-6">
+                                <h3 className="font-bold text-lg mb-4">Contact Info</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
+                                        <input
+                                            type="text"
+                                            value={editForm.contactInfo.phone}
+                                            onChange={e => setEditForm({ ...editForm, contactInfo: { ...editForm.contactInfo, phone: e.target.value } })}
+                                            className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Website</label>
+                                        <input
+                                            type="text"
+                                            value={editForm.contactInfo.website}
+                                            onChange={e => setEditForm({ ...editForm, contactInfo: { ...editForm.contactInfo, website: e.target.value } })}
+                                            className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Address</label>
+                                        <input
+                                            type="text"
+                                            value={editForm.contactInfo.address}
+                                            onChange={e => setEditForm({ ...editForm, contactInfo: { ...editForm.contactInfo, address: e.target.value } })}
+                                            className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                             <div className="flex justify-end pt-4 border-t">
                                 <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition shadow-lg">Save Changes</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Contact Info Modal */}
+            {isContactModalOpen && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-scale-up overflow-hidden">
+                        <div className="flex justify-between items-center p-6 border-b">
+                            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Contact Info</h2>
+                            <button onClick={() => setIsContactModalOpen(false)} className="rounded-full p-2 hover:bg-gray-100 transition-colors">
+                                <X size={24} className="text-gray-500" />
+                            </button>
+                        </div>
+                        <div className="p-8 space-y-8">
+                            <div>
+                                <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-2">Email</h4>
+                                <p className="text-gray-900 font-bold text-lg">{profileUser.email}</p>
+                            </div>
+
+                            {profileUser.contactInfo?.phone && (
+                                <div>
+                                    <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-2">Phone</h4>
+                                    <p className="text-gray-900 font-bold text-lg">{profileUser.contactInfo.phone}</p>
+                                </div>
+                            )}
+
+                            {profileUser.contactInfo?.website && (
+                                <div>
+                                    <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-2">Website</h4>
+                                    <a
+                                        href={profileUser.contactInfo.website.startsWith('http') ? profileUser.contactInfo.website : `https://${profileUser.contactInfo.website}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 font-bold text-lg hover:underline transition-all"
+                                    >
+                                        {profileUser.contactInfo.website}
+                                    </a>
+                                </div>
+                            )}
+
+                            {profileUser.contactInfo?.address && (
+                                <div>
+                                    <h4 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-2">Address</h4>
+                                    <p className="text-gray-900 font-bold text-lg">{profileUser.contactInfo.address}</p>
+                                </div>
+                            )}
+
+                            {!profileUser.contactInfo?.phone && !profileUser.contactInfo?.website && !profileUser.contactInfo?.address && (
+                                <div className="text-center py-4">
+                                    <p className="text-gray-400 font-medium italic">No additional contact info provided.</p>
+                                    {isOwnProfile && (
+                                        <button
+                                            onClick={() => {
+                                                setIsContactModalOpen(false)
+                                                setIsEditing(true)
+                                            }}
+                                            className="mt-4 text-blue-600 font-black text-sm uppercase tracking-widest hover:underline"
+                                        >
+                                            Add Info
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        <div className="bg-gray-50 p-6 flex justify-end">
+                            <button
+                                onClick={() => setIsContactModalOpen(false)}
+                                className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 active:scale-95"
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

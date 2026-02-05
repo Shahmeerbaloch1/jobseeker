@@ -9,6 +9,11 @@ const userSchema = new mongoose.Schema({
     headline: { type: String, default: '' },
     bio: { type: String, default: '' },
     skills: [String],
+    contactInfo: {
+        phone: { type: String, default: '' },
+        website: { type: String, default: '' },
+        address: { type: String, default: '' }
+    },
     connections: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     profileViews: [{
         viewer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },

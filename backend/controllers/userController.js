@@ -40,6 +40,19 @@ export const updateUserProfile = async (req, res) => {
     try {
         const updateData = { ...req.body }
 
+        // Handle nested contactInfo from FormData if present
+        if (req.body['contactInfo[phone]'] || req.body['contactInfo[website]'] || req.body['contactInfo[address]']) {
+            updateData.contactInfo = {
+                phone: req.body['contactInfo[phone]'] || '',
+                website: req.body['contactInfo[website]'] || '',
+                address: req.body['contactInfo[address]'] || ''
+            }
+            // Clean up the flat keys
+            delete updateData['contactInfo[phone]']
+            delete updateData['contactInfo[website]']
+            delete updateData['contactInfo[address]']
+        }
+
         if (req.files) {
             if (req.files.profilePic) {
                 const result = await cloudinary.uploader.upload(req.files.profilePic[0].path, { folder: 'profiles' })
