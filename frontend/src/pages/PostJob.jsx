@@ -42,7 +42,7 @@ export default function PostJob() {
     }
 
     return (
-        <div className="container mx-auto p-4 sm:p-8 max-w-3xl">
+        <div className="w-full max-w-3xl mx-auto p-2 sm:p-8">
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                 <div className="bg-blue-600 p-6 text-center">
                     <h1 className="text-3xl font-black text-white tracking-tight">Post a New Job</h1>

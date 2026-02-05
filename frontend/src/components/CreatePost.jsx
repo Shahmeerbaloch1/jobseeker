@@ -162,15 +162,15 @@ export default function CreatePost({ onPostCreated }) {
                     )}
 
                     <div className="flex justify-between items-center mt-3 sm:mt-4">
-                        <div className="flex gap-0.5">
-                            <label className="flex items-center gap-2 cursor-pointer p-2 sm:px-4 sm:py-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors group">
-                                <Image size={18} className="group-hover:text-blue-600 transition-colors sm:w-5 sm:h-5" />
-                                <span className="text-[10px] sm:text-xs font-bold hidden sm:block">Media</span>
+                        <div className="flex gap-1 items-center">
+                            <label className="flex items-center gap-2 cursor-pointer p-2.5 sm:px-4 sm:py-2 hover:bg-gray-100 rounded-2xl text-gray-600 transition-colors group bg-gray-50 sm:bg-transparent">
+                                <Image size={20} className="group-hover:text-blue-600 transition-colors sm:w-5 sm:h-5 text-blue-500 sm:text-gray-500" />
+                                <span className="text-[10px] sm:text-xs font-black hidden sm:block uppercase">Media</span>
                                 <input type="file" accept="image/*,video/*" onChange={handleFileSelect} className="hidden" />
                             </label>
-                            <label className="flex items-center gap-2 cursor-pointer p-2 sm:px-4 sm:py-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors group">
-                                <Paperclip size={18} className="group-hover:text-blue-600 transition-colors sm:w-5 sm:h-5" />
-                                <span className="text-[10px] sm:text-xs font-bold hidden sm:block">Document</span>
+                            <label className="flex items-center gap-2 cursor-pointer p-2.5 sm:px-4 sm:py-2 hover:bg-gray-100 rounded-2xl text-gray-600 transition-colors group bg-gray-50 sm:bg-transparent">
+                                <Paperclip size={20} className="group-hover:text-blue-600 transition-colors sm:w-5 sm:h-5 text-blue-500 sm:text-gray-500" />
+                                <span className="text-[10px] sm:text-xs font-black hidden sm:block uppercase">Document</span>
                                 <input type="file" accept=".pdf" onChange={handleFileSelect} className="hidden" />
                             </label>
                         </div>

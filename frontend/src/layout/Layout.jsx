@@ -24,13 +24,13 @@ export default function Layout({ children }) {
     return (
         <div className="min-h-screen bg-gray-50/50">
             <Navbar />
-            <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">
+            <div className="w-full max-w-7xl mx-auto px-1.5 sm:px-4 pt-2 sm:pt-4 pb-4 sm:pb-6 overflow-hidden">
                 {isFullWidthPage ? (
                     <div className="pb-20 md:pb-0">
                         {children}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
                         {/* Left Sidebar - Hidden on mobile, visible on lg+ */}
                         <div className="hidden lg:block col-span-1">
                             <Sidebar />

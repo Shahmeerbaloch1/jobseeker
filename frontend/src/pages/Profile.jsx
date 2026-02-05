@@ -139,32 +139,32 @@ export default function Profile() {
 
                 <div className="px-4 sm:px-10 pb-8 relative">
                     {/* Profile Pic - Positioned half-on/half-off the banner */}
-                    <div className="relative -mt-12 sm:-mt-16 inline-block">
-                        <div className="border-4 sm:border-[6px] border-white rounded-3xl shadow-2xl bg-white overflow-hidden w-24 h-24 sm:w-40 sm:h-40 group/pic">
+                    <div className="relative -mt-10 sm:-mt-16 inline-block">
+                        <div className="border-4 sm:border-[6px] border-white rounded-3xl shadow-2xl bg-white overflow-hidden w-20 h-20 sm:w-40 sm:h-40 group/pic">
                             {profileUser.profilePic ? (
                                 <img src={getMediaUrl(profileUser.profilePic)} className="w-full h-full object-cover transition-transform duration-500 group-hover/pic:scale-110" />
                             ) : (
-                                <div className="w-full h-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-3xl sm:text-6xl text-white">
+                                <div className="w-full h-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-2xl sm:text-6xl text-white">
                                     {profileUser.name?.[0]}
                                 </div>
                             )}
                             {isOwnProfile && (
                                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/pic:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onClick={() => setIsEditing(true)}>
-                                    <Camera size={20} className="text-white sm:w-6 sm:h-6" />
+                                    <Camera size={18} className="text-white sm:w-6 sm:h-6" />
                                 </div>
                             )}                        </div>
                     </div>
 
                     <div className="mt-4 sm:mt-6 flex flex-col lg:flex-row justify-between items-start gap-4 sm:gap-6">
                         <div className="flex-1 space-y-1 sm:space-y-2">
-                            <h1 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">{profileUser.name}</h1>
-                            <p className="text-base sm:text-xl text-gray-600 font-medium leading-tight">{profileUser.headline || 'Impactful Professional at JobSocial'}</p>
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1.5 sm:pt-2">
-                                <p className="text-xs sm:text-sm text-gray-500 font-bold flex items-center gap-1.5 hover:text-blue-600 cursor-default transition-colors">
-                                    <MapPin size={14} className="text-blue-500 sm:w-4 sm:h-4" /> Los Angeles Metropolitan Area
+                            <h1 className="text-xl sm:text-4xl font-black text-gray-900 tracking-tight">{profileUser.name}</h1>
+                            <p className="text-sm sm:text-xl text-gray-600 font-medium leading-tight">{profileUser.headline || 'Impactful Professional at JobSocial'}</p>
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 sm:pt-2">
+                                <p className="text-[10px] sm:text-sm text-gray-500 font-bold flex items-center gap-1 hover:text-blue-600 cursor-default transition-colors">
+                                    <MapPin size={11} className="text-blue-500 sm:w-4 sm:h-4" /> Los Angeles Metropolitan Area
                                 </p>
                                 <span className="hidden sm:inline text-gray-300">•</span>
-                                <span className="text-[11px] sm:text-sm text-blue-600 font-black cursor-pointer hover:underline uppercase tracking-widest" onClick={() => setIsContactModalOpen(true)}>Contact info</span>
+                                <span className="text-[9px] sm:text-sm text-blue-600 font-black cursor-pointer hover:underline uppercase tracking-tight" onClick={() => setIsContactModalOpen(true)}>Contact info</span>
                             </div>
                             <div className="pt-3 flex items-center gap-2">
                                 <div className="flex -space-x-3 overflow-hidden">
@@ -183,7 +183,7 @@ export default function Profile() {
                                         </div>
                                     ))}
                                 </div>
-                                <span className="text-xs font-black text-blue-600 hover:underline cursor-pointer transition-colors px-1 uppercase tracking-tighter">
+                                <span className="text-[10px] sm:text-xs font-black text-blue-600 hover:underline cursor-pointer transition-colors px-1 uppercase tracking-tighter line-clamp-1">
                                     {profileUser.connections?.length || 0} Professional Connections
                                 </span>
                             </div>

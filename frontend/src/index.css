@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+*,
+*::before,
+*::after {
+    box-sizing: border-box !important;
+}
+
+html,
+body,
+#root {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    position: relative !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
 @layer utilities {
     .animate-fade-in {
         animation: fadeIn 0.3s ease-out;

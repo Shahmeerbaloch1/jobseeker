@@ -148,8 +148,8 @@ export default function PostCard({ post, onDelete }) {
                             </div>
                         )}
                     </Link>
-                    <div>
-                        <h4 className="font-black text-gray-900 leading-tight hover:text-blue-600 cursor-pointer transition-colors text-sm sm:text-base">{post.author.name}</h4>
+                    <div className="min-w-0">
+                        <h4 className="font-black text-gray-900 leading-tight hover:text-blue-600 cursor-pointer transition-colors text-sm sm:text-base truncate">{post.author.name}</h4>
                         <p className="text-[10px] sm:text-[11px] text-gray-500 font-bold mt-0.5 line-clamp-1">{post.author.headline || 'Professional Member'}</p>
                         <div className="flex items-center gap-1.5 mt-0.5 sm:mt-1">
                             <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
@@ -201,13 +201,13 @@ export default function PostCard({ post, onDelete }) {
                         </div>
                     </div>
                 ) : (
-                    <p className="text-gray-800 text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                    <p className="text-gray-800 text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap break-words w-full overflow-hidden">{post.content}</p>
                 )}
             </div>
 
             {post.mediaUrl && post.mediaType === 'image' && (
-                <div className="bg-gray-50 border-y border-gray-100">
-                    <img src={getMediaUrl(post.mediaUrl)} alt="Post media" className="w-full object-contain max-h-[500px] sm:max-h-[600px] mx-auto" />
+                <div className="bg-gray-50 border-y border-gray-100 flex items-center justify-center">
+                    <img src={getMediaUrl(post.mediaUrl)} alt="Post media" className="w-full h-auto max-h-[400px] sm:max-h-[600px] object-cover sm:object-contain" />
                 </div>
             )}
 
@@ -219,7 +219,7 @@ export default function PostCard({ post, onDelete }) {
                         controls
                         muted // Autoplay generally requires muted
                         playsInline
-                        className="w-full object-contain max-h-[500px] sm:max-h-[600px] mx-auto"
+                        className="w-full h-auto max-h-[400px] sm:max-h-[600px] object-cover sm:object-contain"
                         poster={getVideoThumbnail(post.mediaUrl)}
                     />
                 </div>

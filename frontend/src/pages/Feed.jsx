@@ -33,7 +33,7 @@ export default function Feed() {
     }
 
     return (
-        <div className="max-w-xl mx-auto">
+        <div className="w-full">
             <CreatePost onPostCreated={handlePostCreated} />
 
             {loading ? (

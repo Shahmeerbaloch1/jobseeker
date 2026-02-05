@@ -91,7 +91,7 @@ export default function Navbar() {
         <>
             {/* Top Navbar */}
             <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 h-16 flex items-center shadow-sm">
-                <div className="container mx-auto px-4 flex items-center justify-between gap-4">
+                <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 flex items-center justify-between gap-1.5 sm:gap-4">
                     <div className="flex items-center gap-3">
                         {location.pathname !== '/' && (
                             <button
@@ -102,11 +102,11 @@ export default function Navbar() {
                                 <ArrowLeft size={22} strokeWidth={2.5} />
                             </button>
                         )}
-                        <Link to="/" className="flex items-center gap-2">
-                            <div className="bg-blue-600 p-1.5 rounded-lg shadow-lg shadow-blue-200">
-                                <Briefcase size={22} className="text-white" />
+                        <Link to="/" className="flex items-center gap-1 sm:gap-2 min-w-0">
+                            <div className="bg-blue-600 p-1 rounded-lg sm:p-1.5 shadow-lg shadow-blue-200 shrink-0">
+                                <Briefcase size={18} className="text-white sm:w-[22px] sm:h-[22px]" />
                             </div>
-                            <span className="text-2xl font-black text-gray-900 tracking-tighter">Job<span className="text-blue-600">Social</span></span>
+                            <span className="text-lg sm:text-2xl font-black text-gray-900 tracking-tighter truncate">Job<span className="text-blue-600">Social</span></span>
                         </Link>
                     </div>
 
@@ -259,29 +259,11 @@ export default function Navbar() {
                             </div>
                             <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Network</span>
                         </Link>
-                        <button
-                            onClick={() => {
-                                setIsMobileSearchOpen(!isMobileSearchOpen);
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                            className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 ${isMobileSearchOpen ? 'text-blue-600' : 'text-gray-400'}`}
-                        >
-                            <div className={`p-1 rounded-xl transition-colors ${isMobileSearchOpen ? 'bg-blue-50' : ''}`}>
-                                <Search size={22} />
-                            </div>
-                            <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Search</span>
-                        </button>
                         <Link to="/jobs" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 ${isActive('/jobs') ? 'text-blue-600' : 'text-gray-400'}`}>
                             <div className={`p-1 rounded-xl transition-colors ${isActive('/jobs') ? 'bg-blue-50' : ''}`}>
                                 <Briefcase size={22} />
                             </div>
                             <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Jobs</span>
-                        </Link>
-                        <Link to="/my-items" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 ${isActive('/my-items') ? 'text-blue-600' : 'text-gray-400'}`}>
-                            <div className={`p-1 rounded-xl transition-colors ${isActive('/my-items') ? 'bg-blue-50' : ''}`}>
-                                <Bookmark size={22} />
-                            </div>
-                            <span className="text-[9px] font-bold uppercase tracking-tight truncate w-full text-center">Items</span>
                         </Link>
                         <Link to="/messaging" className={`flex flex-col items-center justify-center gap-1 flex-1 min-w-0 transition-all active:scale-95 relative ${isActive('/messaging') ? 'text-blue-600' : 'text-gray-400'}`}>
                             <div className={`p-1 rounded-xl transition-colors ${isActive('/messaging') ? 'bg-blue-50' : ''}`}>

@@ -31,8 +31,8 @@ export default function Login() {
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <div className="bg-white p-8 rounded shadow-md w-96">
+        <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
+            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md">
                 <h1 className="text-3xl font-bold text-blue-600 mb-2 text-center">JobSocial</h1>
                 <h2 className="text-xl font-semibold mb-6 text-center">Sign in</h2>
                 <form onSubmit={handleSubmit}>
