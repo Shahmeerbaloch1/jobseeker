@@ -15,6 +15,10 @@ import JobDetails from '../pages/JobDetails'
 import CompanyDashboard from '../pages/CompanyDashboard' // New
 import MyItems from '../pages/MyItems'
 import SearchResults from '../pages/SearchResults'
+import ForgotPassword from '../pages/ForgotPassword'
+import VerifyOTP from '../pages/VerifyOTP'
+import ResetPassword from '../pages/ResetPassword'
+import Settings from '../pages/Settings'
 import ScrollToTop from '../components/ScrollToTop'
 
 function ProtectedRoute({ children }) {
@@ -32,6 +36,9 @@ export default function AppRoutes() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/verification" element={<Verification />} />
+                <Route path="/forgot-password/email" element={<ForgotPassword />} />
+                <Route path="/forgot-password/verify" element={<VerifyOTP />} />
+                <Route path="/forgot-password/reset" element={<ResetPassword />} />
 
                 <Route path="/" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
                 <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
@@ -43,6 +50,7 @@ export default function AppRoutes() {
                 <Route path="/profile/:id" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/company-dashboard" element={<ProtectedRoute><CompanyDashboard /></ProtectedRoute>} />
                 <Route path="/my-items" element={<ProtectedRoute><MyItems /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/search" element={<ProtectedRoute><SearchResults /></ProtectedRoute>} />
             </Routes>
         </BrowserRouter>

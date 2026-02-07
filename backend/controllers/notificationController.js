@@ -6,7 +6,10 @@ export const getNotifications = async (req, res) => {
         const notifications = await Notification.find({ recipient: userId })
             .sort({ createdAt: -1 })
             .populate('sender', 'name profilePic')
-        res.json(notifications)
+
+        // Filter out notifications where the sender no longer exists
+        const validNotifications = notifications.filter(n => n.sender !== null)
+        res.json(validNotifications)
     } catch (error) {
         res.status(500).json({ message: error.message })
     }

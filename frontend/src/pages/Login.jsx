@@ -55,6 +55,9 @@ export default function Login() {
                             className="w-full border p-2 rounded mt-1"
                             required
                         />
+                        <div className="flex justify-end mt-1">
+                            <Link to="/forgot-password/email" className="text-sm text-blue-600 hover:underline">Forgot password?</Link>
+                        </div>
                     </div>
                     <button
                         type="submit"

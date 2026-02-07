@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 
 const userSchema = new mongoose.Schema({
     name: String,
-    email: { type: String, unique: true, required: true },
+    email: { type: String, unique: true, required: true, lowercase: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['user', 'company'], default: 'user' },
     profilePic: { type: String, default: '' },
@@ -21,7 +21,9 @@ const userSchema = new mongoose.Schema({
     }],
     verificationCode: String,
     verificationCodeExpires: Date,
-    isVerified: { type: Boolean, default: false }
-})
+    isVerified: { type: Boolean, default: false },
+    resetPasswordCode: String,
+    resetPasswordExpires: Date
+}, { timestamps: true })
 
 export default mongoose.model('User', userSchema)

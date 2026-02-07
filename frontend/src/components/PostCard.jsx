@@ -45,7 +45,7 @@ export default function PostCard({ post, onDelete }) {
     }, [post])
 
     const isLiked = likes?.includes(user?._id || user?.id)
-    const isAuthor = user && (user._id === post.author._id || user.id === post.author._id || user._id === post.author || user.id === post.author)
+    const isAuthor = user && post.author && (user._id === post.author._id || user.id === post.author._id || user._id === post.author || user.id === post.author)
 
     const handleLike = async () => {
         try {
@@ -139,18 +139,22 @@ export default function PostCard({ post, onDelete }) {
             {/* Header */}
             <div className="p-3 sm:p-4 flex gap-2 sm:gap-3 justify-between items-start">
                 <div className="flex gap-2 sm:gap-3">
-                    <Link to={`/profile/${post.author._id || post.author.id}`} className="shrink-0">
-                        {post.author.profilePic ? (
+                    <Link to={post.author ? `/profile/${post.author._id || post.author.id}` : '#'} className="shrink-0">
+                        {post.author?.profilePic ? (
                             <img src={getMediaUrl(post.author.profilePic)} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white shadow-sm" />
                         ) : (
                             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center font-bold text-gray-500 border-2 border-white shadow-sm text-sm sm:text-base">
-                                {post.author.name?.[0]}
+                                {post.author?.name?.[0] || '?'}
                             </div>
                         )}
                     </Link>
                     <div className="min-w-0">
-                        <h4 className="font-black text-gray-900 leading-tight hover:text-blue-600 cursor-pointer transition-colors text-sm sm:text-base truncate">{post.author.name}</h4>
-                        <p className="text-[10px] sm:text-[11px] text-gray-500 font-bold mt-0.5 line-clamp-1">{post.author.headline || 'Professional Member'}</p>
+                        <h4 className="font-black text-gray-900 leading-tight hover:text-blue-600 cursor-pointer transition-colors text-sm sm:text-base truncate">
+                            {post.author?.name || 'Deleted User'}
+                        </h4>
+                        <p className="text-[10px] sm:text-[11px] text-gray-500 font-bold mt-0.5 line-clamp-1">
+                            {post.author?.headline || 'Former Member'}
+                        </p>
                         <div className="flex items-center gap-1.5 mt-0.5 sm:mt-1">
                             <p className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                                 {post.createdAt ? (

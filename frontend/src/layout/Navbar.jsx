@@ -3,7 +3,7 @@ import { useContext, useState, useRef, useEffect } from 'react'
 import { UserContext } from '../context/UserContext'
 import { useSocket } from '../context/SocketContext'
 import axios from 'axios'
-import { Bell, MessageSquare, LogOut, User as UserIcon, Briefcase, Home, Users, Bookmark, ArrowLeft, Search } from 'lucide-react'
+import { Bell, MessageSquare, LogOut, User as UserIcon, Briefcase, Home, Users, Bookmark, ArrowLeft, Search, Settings } from 'lucide-react'
 
 export default function Navbar() {
     const { user, logout, unreadCount } = useContext(UserContext)
@@ -201,6 +201,13 @@ export default function Navbar() {
                                             className={`flex items-center gap-3 px-4 py-3 transition-colors font-semibold ${isActive('/my-items') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`}
                                         >
                                             <Bookmark size={18} /> My Items
+                                        </Link>
+                                        <Link
+                                            to="/settings"
+                                            onClick={() => setIsMenuOpen(false)}
+                                            className={`flex items-center gap-3 px-4 py-3 transition-colors font-semibold ${isActive('/settings') ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`}
+                                        >
+                                            <Settings size={18} /> Settings
                                         </Link>
                                         <div className="h-px bg-gray-50 mx-2"></div>
                                         <button

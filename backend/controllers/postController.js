@@ -50,7 +50,10 @@ export const getFeed = async (req, res) => {
                 path: 'comments',
                 populate: { path: 'author', select: 'name profilePic' }
             })
-        res.json(posts)
+
+        // Filter out posts where the author no longer exists (orphaned posts)
+        const validPosts = posts.filter(post => post.author !== null)
+        res.json(validPosts)
     } catch (error) {
         res.status(500).json({ message: error.message })
     }

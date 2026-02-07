@@ -8,6 +8,7 @@ import axios from 'axios'
 
 export default function Layout({ children }) {
     const location = useLocation()
+
     const isAuthPage = ['/login', '/register'].includes(location.pathname)
     const isFullWidthPage = ['/profile', '/messaging', '/jobs', '/my-items', '/network', '/jobs/'].some(path => location.pathname.startsWith(path))
     const isFeedPage = location.pathname === '/' || location.pathname === '/notifications'
@@ -22,7 +23,7 @@ export default function Layout({ children }) {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50/50">
+        <div className="min-h-screen">
             <Navbar />
             <div className="w-full max-w-7xl mx-auto px-1.5 sm:px-4 pt-2 sm:pt-4 pb-4 sm:pb-6 overflow-hidden">
                 {isFullWidthPage ? (

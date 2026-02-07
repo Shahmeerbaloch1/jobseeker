@@ -1,8 +1,14 @@
 import User from '../models/User.js'
 import Connection from '../models/Connection.js'
 import Notification from '../models/Notification.js'
+import Post from '../models/Post.js'
+import Comment from '../models/Comment.js'
+import Job from '../models/Job.js'
+import Application from '../models/Application.js'
+import Message from '../models/Message.js'
 import cloudinary from '../config/cloudinary.js'
 import fs from 'fs'
+import mongoose from 'mongoose'
 
 export const getUserProfile = async (req, res) => {
     try {
@@ -291,6 +297,55 @@ export const searchUsers = async (req, res) => {
         res.json(users);
     } catch (error) {
         console.error('SEARCH CONTROLLER ERROR:', error);
+        res.status(500).json({ message: error.message });
+    }
+}
+
+export const deleteAccount = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const objId = new mongoose.Types.ObjectId(userId);
+
+        // Cascade Delete Logic - Remove all user footprint
+
+        // 1. Delete all primary content created by user
+        await Post.deleteMany({ author: objId });
+        await Comment.deleteMany({ author: objId });
+
+        // Delete all applications for jobs posted by this user
+        const userJobs = await Job.find({ author: objId }).distinct('_id');
+        await Application.deleteMany({ job: { $in: userJobs } });
+
+        await Job.deleteMany({ author: objId });
+        await Application.deleteMany({ applicant: objId });
+        await Message.deleteMany({ $or: [{ sender: objId }, { recipient: objId }] });
+        await Notification.deleteMany({ $or: [{ recipient: objId }, { sender: objId }] });
+        await Connection.deleteMany({ $or: [{ requester: objId }, { recipient: objId }] });
+
+        // 2. Remove user references from other users' connection arrays
+        await User.updateMany(
+            { connections: objId },
+            { $pull: { connections: objId } }
+        );
+
+        // 3. Remove user likes/shares from all remaining posts
+        await Post.updateMany(
+            {},
+            {
+                $pull: {
+                    likes: objId,
+                    shares: objId
+                }
+            }
+        );
+
+        // 4. Finally delete the user account
+        const user = await User.findByIdAndDelete(objId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        res.json({ message: 'Account and all associated public data deleted successfully' });
+    } catch (error) {
+        console.error('Account Deletion Error:', error);
         res.status(500).json({ message: error.message });
     }
 }

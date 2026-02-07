@@ -49,8 +49,13 @@ export const getJobs = async (req, res) => {
         if (search) query.title = { $regex: search, $options: 'i' }
         if (location) query.location = { $regex: location, $options: 'i' }
 
-        const jobs = await Job.find(query).sort({ createdAt: -1 })
-        res.json(jobs)
+        const jobs = await Job.find(query)
+            .sort({ createdAt: -1 })
+            .populate('author', 'name profilePic')
+
+        // Filter out jobs where the author no longer exists
+        const validJobs = jobs.filter(job => job.author !== null)
+        res.json(validJobs)
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
@@ -156,11 +161,13 @@ export const searchJobs = async (req, res) => {
             query.location = { $regex: location, $options: 'i' };
         }
 
-        const jobs = await Job.find(query).sort({ createdAt: -1 });
-        console.log(`Query finished. Found ${jobs.length} jobs.`);
-        console.log('-----------------------------');
+        const jobs = await Job.find(query)
+            .sort({ createdAt: -1 })
+            .populate('author', 'name profilePic')
 
-        res.json(jobs);
+        // Filter out jobs where the author no longer exists
+        const validJobs = jobs.filter(job => job.author !== null)
+        res.json(validJobs)
     } catch (error) {
         console.error('JOB SEARCH CONTROLLER ERROR:', error);
         res.status(500).json({ message: error.message });

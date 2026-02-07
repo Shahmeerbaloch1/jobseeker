@@ -1,14 +1,26 @@
 import express from 'express'
-import { register, login, getMe, verifyEmail, resendVerificationCode } from '../controllers/authController.js'
-// Need auth middleware for getMe, skipping for now or will implement if needed
-const router = express.Router()
-
+import {
+    register,
+    verifyEmail,
+    login,
+    getMe,
+    resendVerificationCode,
+    forgotPassword,
+    verifyResetCode,
+    resetPassword
+} from '../controllers/authController.js'
 import { protect } from '../middleware/authMiddleware.js'
 
-router.get('/me', protect, getMe)
+const router = express.Router()
+
 router.post('/register', register)
-router.post('/login', login)
-router.post('/verify', verifyEmail)
+router.post('/verify-email', verifyEmail)
 router.post('/resend-code', resendVerificationCode)
+router.post('/login', login)
+router.get('/me', protect, getMe)
+
+router.post('/forgot-password', forgotPassword)
+router.post('/verify-reset-code', verifyResetCode)
+router.post('/reset-password', resetPassword)
 
 export default router
