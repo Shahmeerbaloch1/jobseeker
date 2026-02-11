@@ -1,25 +1,56 @@
 import { useState, useContext, useEffect, useRef } from 'react'
 import { UserContext } from '../context/UserContext'
+import { useSocket } from '../context/SocketContext'
 import { ThumbsUp, MessageCircle, Share2, Send, MoreHorizontal, Trash2, Edit2, Clock, Paperclip } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import ConfirmationModal from './ConfirmationModal'
+import ShareModal from './ShareModal'
 import { Link } from 'react-router-dom'
 
 export default function PostCard({ post, onDelete }) {
     const { user } = useContext(UserContext)
+    const { socket } = useSocket()
     const [showOptions, setShowOptions] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [editContent, setEditContent] = useState(post.content)
     const [likes, setLikes] = useState(post.likes || [])
-    const [comments, setComments] = useState(post.comments || [])
+    // Initialize comments in reverse order (newest first), assuming backend sends oldest first
+    const [comments, setComments] = useState([...(post.comments || [])].reverse())
     const [shares, setShares] = useState(post.shares || [])
     const [showComments, setShowComments] = useState(false)
     const [commentText, setCommentText] = useState('')
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [showShareModal, setShowShareModal] = useState(false)
     const videoRef = useRef(null)
+
+    // Real-time updates listener
+    useEffect(() => {
+        if (!socket) {
+            console.log('Socket not available in PostCard')
+            return
+        }
+        console.log('Socket listening for post_updated')
+
+        const handlePostUpdate = (updatedPost) => {
+            console.log('Post Update Received:', updatedPost._id, 'Current Post:', post._id)
+            if (updatedPost._id === post._id || updatedPost._id === post._id?.toString()) {
+                console.log('Updating post state for:', post._id)
+                setLikes(updatedPost.likes || [])
+                // Reverse comments to show newest first
+                const reversedComments = [...(updatedPost.comments || [])].reverse()
+                setComments(reversedComments)
+                setShares(updatedPost.shares || [])
+            }
+        }
+
+        socket.on('post_updated', handlePostUpdate)
+
+        return () => {
+            socket.off('post_updated', handlePostUpdate)
+        }
+    }, [socket, post._id])
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -84,7 +115,11 @@ export default function PostCard({ post, onDelete }) {
     }
 
     const handleComment = async (e) => {
-        e.preventDefault()
+        e.preventDefault() // Always prevent default
+        if (!user || (!user._id && !user.id)) {
+            toast.error('You must be logged in to comment')
+            return
+        }
         if (!commentText.trim()) return
 
         try {
@@ -92,27 +127,27 @@ export default function PostCard({ post, onDelete }) {
                 userId: user._id || user.id,
                 content: commentText
             })
-            setComments([...comments, res.data])
+            setComments([res.data, ...comments]) // Newest first
             setCommentText('')
         } catch (error) {
-            console.error(error)
+            console.error('Comment Error Full:', error)
+            const errorMsg = error.response?.data?.message || error.message
+            const errorStack = error.response?.data?.stack
+            console.error('Server Stack:', errorStack)
+            toast.error(`Error: ${errorMsg}`)
         }
     }
 
     const handleShare = async () => {
         try {
             await axios.put(`http://localhost:5000/api/posts/${post._id}/share`, { userId: user._id || user.id })
+            // Optimistic update
             if (shares?.includes(user?._id || user?.id)) {
                 setShares(shares.filter(id => id !== (user._id || user.id)))
             } else {
                 setShares([...shares, user._id || user.id])
             }
             setShowShareModal(true)
-            // Copy link to clipboard
-            const postLink = `${window.location.origin}/posts/${post._id}`
-            navigator.clipboard.writeText(postLink)
-            toast.success('Link copied to clipboard!')
-            setTimeout(() => setShowShareModal(false), 2000)
         } catch (error) {
             console.error(error)
             toast.error('Failed to share post')
@@ -311,7 +346,7 @@ export default function PostCard({ post, onDelete }) {
                     </form>
                     <div className="space-y-4">
                         {comments.map((comment, idx) => (
-                            <div key={idx} className="flex gap-3 group/comment">
+                            <div key={comment._id || idx} className="flex gap-3 group/comment">
                                 <div className="w-10 h-10 rounded-full bg-white border border-gray-100 flex-shrink-0 flex items-center justify-center text-sm font-black shadow-sm overflow-hidden">
                                     {comment.author?.profilePic ? (
                                         <img src={getMediaUrl(comment.author.profilePic)} className="w-full h-full object-cover" />
@@ -340,6 +375,11 @@ export default function PostCard({ post, onDelete }) {
                 message="Are you sure you want to delete this post? This action cannot be undone and will be removed from everyone's feed."
                 confirmText="Permanently Delete"
                 cancelText="Nevermind"
+            />
+            <ShareModal
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                postUrl={`${window.location.origin}/posts/${post._id}`}
             />
         </div>
     )

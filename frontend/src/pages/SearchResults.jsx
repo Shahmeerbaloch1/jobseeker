@@ -88,28 +88,42 @@ export default function SearchResults() {
     )
 
     const renderPeople = () => (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8">
             {people.map(user => (
                 <Link key={user._id} to={`/profile/${user._id}`} className="group">
-                    <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-gray-100 hover:shadow-2xl hover:border-blue-100 transition-all duration-300 h-full flex flex-col">
-                        <div className="h-24 bg-gradient-to-r from-blue-50 to-indigo-50 relative">
+                    <div className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl hover:translate-y-[-4px] transition-all duration-300 h-full flex flex-col">
+                        {/* Top Background Section */}
+                        <div className="h-28 bg-[#f0f4ff] relative">
+                            {/* Profile Picture Container - Positioned to overlap */}
                             <div className="absolute -bottom-10 left-1/2 transform -translate-x-1/2">
                                 {user.profilePic ? (
-                                    <img src={getMediaUrl(user.profilePic)} alt={user.name} className="w-20 h-20 rounded-2xl object-cover border-4 border-white shadow-md group-hover:scale-105 transition-transform" />
+                                    <img
+                                        src={getMediaUrl(user.profilePic)}
+                                        alt={user.name}
+                                        className="w-24 h-24 rounded-2xl object-cover border-[6px] border-white shadow-md group-hover:scale-105 transition-transform"
+                                    />
                                 ) : (
-                                    <div className="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl flex items-center justify-center text-2xl font-black text-white border-4 border-white shadow-md">
+                                    <div className="w-24 h-24 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl flex items-center justify-center text-3xl font-black text-white border-[6px] border-white shadow-md group-hover:scale-105 transition-transform">
                                         {user.name?.[0]}
                                     </div>
                                 )}
                             </div>
                         </div>
-                        <div className="pt-12 pb-6 px-6 text-center flex-1">
-                            <h3 className="font-bold text-gray-900 text-lg mb-1 group-hover:text-blue-600 transition-colors">{user.name}</h3>
-                            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-3 line-clamp-1">{user.headline || 'Member'}</p>
+
+                        {/* Content Section */}
+                        <div className="pt-14 pb-8 px-6 text-center flex-1 flex flex-col items-center">
+                            <h3 className="font-extrabold text-gray-900 text-xl mb-1 group-hover:text-blue-600 transition-colors tracking-tight">
+                                {user.name}
+                            </h3>
+                            <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">
+                                {user.headline || 'MEMBER'}
+                            </p>
+
+                            {/* Optional: Skills or other info can go here if needed, but keeping it clean for now as per image */}
                             {user.skills && user.skills.length > 0 && (
-                                <div className="flex flex-wrap justify-center gap-1.5 mt-2">
+                                <div className="flex flex-wrap justify-center gap-1.5 mt-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
                                     {user.skills.slice(0, 3).map((skill, idx) => (
-                                        <span key={idx} className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded-lg">
+                                        <span key={idx} className="bg-gray-50 text-gray-500 text-[10px] font-bold px-2 py-1 rounded-lg">
                                             {skill}
                                         </span>
                                     ))}

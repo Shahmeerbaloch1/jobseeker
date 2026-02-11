@@ -90,6 +90,13 @@ export const likePost = async (req, res) => {
             await post.save()
             // Optionally remove notification if unlike?
         }
+
+        // Populate author for consistent frontend data structure
+        await post.populate('author', 'name profilePic headline')
+
+        // REAL-TIME UPDATE: Emit to all clients that this post has changed
+        req.io.emit('post_updated', post)
+
         res.json(post)
     } catch (error) {
         res.status(500).json({ message: error.message })
@@ -100,38 +107,71 @@ export const commentOnPost = async (req, res) => {
     try {
         const { postId } = req.params
         const { userId, content } = req.body
+        console.log(`[DEBUG] Commenting on post ${postId} by user ${userId} with content: "${content}"`)
+
+        if (!content) {
+            console.log('[DEBUG] Content missing')
+            return res.status(400).json({ message: 'Content is required' })
+        }
 
         const comment = await Comment.create({
             author: userId,
-            post: postId,
+            post: postId, // Ensure this field matches schema
             content
         })
+        console.log('[DEBUG] Comment created:', comment._id)
 
         const post = await Post.findById(postId)
+        if (!post) {
+            console.log('[DEBUG] Post not found')
+            return res.status(404).json({ message: 'Post not found' })
+        }
+
         post.comments.push(comment._id)
         await post.save()
+        console.log('[DEBUG] Post updated with comment')
 
         // Notify author
         if (post.author.toString() !== userId) {
-            const newNotification = await Notification.create({
-                recipient: post.author,
-                sender: userId,
-                type: 'comment',
-                relatedId: post._id,
-                message: 'commented on your post'
-            })
+            try {
+                const newNotification = await Notification.create({
+                    recipient: post.author,
+                    sender: userId,
+                    type: 'comment',
+                    relatedId: post._id,
+                    message: 'commented on your post'
+                })
 
-            const sender = await User.findById(userId).select('name profilePic headline')
-            req.io.to(post.author.toString()).emit('new_notification', {
-                ...newNotification.toObject(),
-                sender
-            })
+                const sender = await User.findById(userId).select('name profilePic headline')
+                req.io.to(post.author.toString()).emit('new_notification', {
+                    ...newNotification.toObject(),
+                    sender
+                })
+            } catch (notifyError) {
+                console.error('[DEBUG] Notification error (non-fatal):', notifyError)
+            }
         }
 
         const populatedComment = await comment.populate('author', 'name profilePic')
+        console.log('[DEBUG] Comment populated')
+
+        // Re-fetch post with populated comments to send full update
+        const updatedPost = await Post.findById(postId)
+            .populate('author', 'name profilePic headline')
+            .populate({
+                path: 'comments',
+                populate: { path: 'author', select: 'name profilePic' }
+            })
+
+        console.log('[DEBUG] Updated post fetched, emitting event')
+
+        // REAL-TIME UPDATE: Emit to all clients
+        req.io.emit('post_updated', updatedPost)
+
         res.status(201).json(populatedComment)
     } catch (error) {
-        res.status(500).json({ message: error.message })
+        console.error('[DEBUG] Comment Error Trace:', error)
+        res.status(500).json({ message: error.message, stack: error.stack })
     }
 }
 

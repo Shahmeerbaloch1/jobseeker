@@ -110,7 +110,7 @@ export default function Navbar() {
                         </Link>
                     </div>
 
-                    <div className="flex-1 max-w-md hidden lg:block">
+                    <div className="flex-1 max-w-2xl hidden lg:block">
                         <div className="relative group">
                             <input
                                 type="text"

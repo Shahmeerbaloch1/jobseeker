@@ -14,13 +14,21 @@ export const SocketProvider = ({ children }) => {
     const { user } = useUser();
 
     useEffect(() => {
+        console.log('SocketContext: Checking user:', user);
         if (user) {
-            // Adjust URL if needed, assuming generic relative or localhost
-            const newSocket = io('http://localhost:3000');
+            // Match the backend port (5000 based on API calls)
+            const newSocket = io('http://localhost:5000', {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+            });
 
             newSocket.on('connect', () => {
-                console.log('Socket connected:', newSocket.id);
+                console.log('Socket connected successfully:', newSocket.id);
                 newSocket.emit('join_room', user._id);
+            });
+
+            newSocket.on('connect_error', (err) => {
+                console.error('Socket connection error:', err);
             });
 
             newSocket.on('new_notification', (notification) => {
